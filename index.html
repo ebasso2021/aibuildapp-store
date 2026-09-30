@@ -231,6 +231,8 @@ const LocalDB={
     this.save(d);return out}
 };
 /* Connection: inside Apps Script (gas), GitHub Pages / any site -> Apps Script JSON API (remote), or this browser only (local) */
+/* Your Apps Script Web app (API). Only the screens run on GitHub; the script and data stay in Google. */
+const DEFAULT_API_URL='https://script.google.com/macros/s/AKfycbxjAiqIFjrtNTXMLrzRVzh8w_mb_QqxI1qJsu_ht_ixmILSEe1UGkCEa_RO_H_ZPP-z/exec';
 const CONN_KEY='aibs_conn_v1',GASKEY='aibs_gaskey_v1';
 const lsGet=(k)=>{try{return localStorage.getItem(k)}catch(e){return null}};
 const lsSet=(k,v)=>{try{v==null?localStorage.removeItem(k):localStorage.setItem(k,v)}catch(e){}};
@@ -249,7 +251,7 @@ function showConnect(msg){
   $('#nav').innerHTML=`<div class="brand">AIBuildApp Store<small>${t('Sales & Repair Manager')}</small></div>`;
   $('#top').innerHTML=`<h1>${t('Connect to your store database')}</h1><button class="btn ghost sm" onclick="setLang(LANG==='en'?'es':'en')">${LANG==='en'?'ES':'EN'}</button>`;
   $('#view').innerHTML=`<div class="card" style="max-width:640px">${msg?`<p style="color:var(--bad);font-weight:600">${esc(msg)}</p>`:''}
-   <form id="cf" class="grid2">${IS_GAS?'':`<label class="full"><span>${t('Apps Script Web app URL (ends in /exec)')}</span><input name="url" required placeholder="https://script.google.com/macros/s/…/exec" value="${esc((CONN&&CONN.url)||'')}"></label>`}
+   <form id="cf" class="grid2">${IS_GAS?'':`<label class="full"><span>${t('Apps Script Web app URL (ends in /exec)')}</span><input name="url" required placeholder="https://script.google.com/macros/s/…/exec" value="${esc((CONN&&CONN.url)||DEFAULT_API_URL)}"></label>`}
    <label class="full"><span>${t('Access key')}</span><input name="key" required autocomplete="off" value="${esc(IS_GAS?(lsGet(GASKEY)||''):((CONN&&CONN.key)||''))}"></label>
    ${IS_GAS?'':`<label class="full"><span>${t('Your name (shown on records)')}</span><input name="user" value="${esc((CONN&&CONN.user)||'')}"></label>`}
    <div class="full actions">${IS_GAS?'':`<button type="button" class="btn ghost" onclick="useLocal()">${t('Use local mode (this browser only)')}</button>`}<button class="btn">${t('Connect')}</button></div></form>
