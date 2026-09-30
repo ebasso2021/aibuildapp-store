@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html>
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AIBuildApp Store</title>
+<style>
+:root{--bg:#f4f6fa;--card:#fff;--ink:#0f172a;--mut:#64748b;--line:#e2e8f0;--pri:#2563eb;--pri2:#1d4ed8;--ok:#16a34a;--warn:#d97706;--bad:#dc2626;--nav:#0f172a;--navink:#cbd5e1}
+*{box-sizing:border-box}
+body{margin:0;font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink)}
+#app{display:flex;min-height:100vh}
+#nav{width:210px;background:var(--nav);color:var(--navink);padding:14px 10px;flex-shrink:0;position:sticky;top:0;height:100vh;overflow:auto}
+#nav .brand{color:#fff;font-weight:700;font-size:16px;padding:4px 10px 14px}
+#nav .brand small{display:block;color:#94a3b8;font-weight:400;font-size:11px}
+#nav a{display:block;padding:8px 10px;border-radius:8px;color:var(--navink);text-decoration:none;cursor:pointer;margin-bottom:2px}
+#nav a:hover{background:#1e293b;color:#fff}
+#nav a.on{background:var(--pri);color:#fff}
+main{flex:1;min-width:0}
+#top{display:flex;align-items:center;gap:10px;padding:12px 20px;background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
+#top h1{font-size:18px;margin:0;flex:1}
+#menuBtn{display:none}
+#view{padding:20px;max-width:1400px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px}
+.card h3{margin:0 0 12px;font-size:15px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px}
+.kpi .l{color:var(--mut);font-size:12px}
+.kpi .v{font-size:22px;font-weight:700;margin-top:4px}
+.kpi.warn .v{color:var(--warn)} .kpi.bad .v{color:var(--bad)} .kpi.ok .v{color:var(--ok)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.full{grid-column:1/-1}
+label span{display:block;font-size:12px;color:var(--mut);margin-bottom:3px}
+input,select,textarea{width:100%;padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;font:inherit;background:#fff;color:var(--ink)}
+input:focus,select:focus,textarea:focus{outline:2px solid #bfdbfe;border-color:var(--pri)}
+.btn{background:var(--pri);color:#fff;border:0;border-radius:8px;padding:8px 14px;font:inherit;font-weight:600;cursor:pointer;white-space:nowrap}
+.btn:hover{background:var(--pri2)}
+.btn.ghost{background:#fff;color:var(--ink);border:1px solid #cbd5e1}
+.btn.ghost:hover{background:#f1f5f9}
+.btn.ok{background:var(--ok)} .btn.bad{background:var(--bad)} .btn.warn{background:var(--warn)}
+.btn.sm{padding:4px 9px;font-size:12px}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}
+.bar input,.bar select{width:auto;min-width:160px}
+.bar .grow{flex:1}
+.tw{overflow:auto}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;color:var(--mut);font-weight:600;background:#f8fafc;position:sticky;top:0}
+td.n,th.n{text-align:right;white-space:nowrap}
+tr.click{cursor:pointer} tr.click:hover td{background:#f8fafc}
+.badge{display:inline-block;padding:2px 8px;border-radius:99px;font-size:12px;font-weight:600;background:#e2e8f0;color:#334155;white-space:nowrap}
+.b-Received,.b-Active,.b-Completed{background:#dbeafe;color:#1e40af}
+.b-Diagnosing,.b-In-Repair{background:#ede9fe;color:#5b21b6}
+.b-Waiting-Approval,.b-Waiting-Parts{background:#fef3c7;color:#92400e}
+.b-Ready{background:#dcfce7;color:#166534}
+.b-Delivered{background:#e2e8f0;color:#334155}
+.b-Cancelled,.b-Void,.b-Expired{background:#fee2e2;color:#991b1b}
+.b-High{background:#fee2e2;color:#991b1b}
+.mut{color:var(--mut)} .right{text-align:right} .bold{font-weight:700}
+.hidden{display:none!important}
+#modal{position:fixed;inset:0;background:rgba(15,23,42,.5);display:flex;align-items:flex-start;justify-content:center;padding:30px 12px;z-index:50;overflow:auto}
+.mbox{background:#fff;border-radius:14px;width:100%;max-width:760px;box-shadow:0 20px 50px rgba(0,0,0,.25)}
+.mhead{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid var(--line)}
+.mhead h3{margin:0;font-size:16px}
+.mhead button{border:0;background:none;font-size:24px;cursor:pointer;color:var(--mut)}
+#mbody{padding:18px}
+.actions{display:flex;justify-content:flex-end;gap:8px;margin-top:6px}
+#toast{position:fixed;right:16px;bottom:16px;z-index:99;display:flex;flex-direction:column;gap:8px}
+#toast div{background:#0f172a;color:#fff;padding:10px 14px;border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.2);max-width:360px}
+#toast div.err{background:var(--bad)}
+#busy{position:fixed;inset:0;background:rgba(255,255,255,.55);z-index:90;display:flex;align-items:center;justify-content:center;font-weight:600}
+.pos{display:grid;grid-template-columns:1fr 1.25fr;gap:16px}
+.plist{max-height:62vh;overflow:auto}
+.pitem{display:flex;justify-content:space-between;gap:8px;padding:8px;border:1px solid var(--line);border-radius:8px;margin-bottom:6px;cursor:pointer}
+.pitem:hover{border-color:var(--pri);background:#eff6ff}
+.tot td{border:0;padding:3px 8px}
+.tot tr:last-child td{font-size:18px;font-weight:700}
+.kv{display:grid;grid-template-columns:140px 1fr;gap:4px 10px}
+.kv div:nth-child(odd){color:var(--mut)}
+.tl{border-left:2px solid var(--line);padding-left:12px}
+.tl div{margin-bottom:8px}
+.empty{padding:24px;text-align:center;color:var(--mut)}
+#print{display:none}
+@media print{
+  body{background:#fff}
+  #app,#modal,#toast,#busy{display:none!important}
+  #print{display:block;font-size:12px;color:#000}
+  #print table th{background:#fff}
+}
+.doc{max-width:760px;margin:0 auto}
+.doc h2{margin:0}
+.doc .hd{display:flex;justify-content:space-between;border-bottom:2px solid #000;padding-bottom:8px;margin-bottom:10px}
+.sig{margin-top:40px;display:flex;gap:40px}
+.sig div{flex:1;border-top:1px solid #000;padding-top:4px}
+@media(max-width:900px){
+  #nav{position:fixed;left:-230px;z-index:40;transition:left .2s}
+  #nav.open{left:0}
+  #menuBtn{display:inline-block}
+  .pos,.grid3{grid-template-columns:1fr}
+  #view{padding:12px}
+}
+@media(max-width:600px){.grid2{grid-template-columns:1fr}.kv{grid-template-columns:110px 1fr}}
+</style>
+</head>
+<body>
+<div id="app">
+  <aside id="nav"></aside>
+  <main>
+    <header id="top"></header>
+    <section id="view"><div class="empty">Loading…</div></section>
+  </main>
+</div>
+<div id="modal" class="hidden"><div class="mbox"><div class="mhead"><h3 id="mtitle"></h3><button onclick="closeModal()" aria-label="Close">&times;</button></div><div id="mbody"></div></div></div>
+<div id="print"></div>
+<div id="toast"></div>
+<div id="busy" class="hidden">…</div>
+
+<script>
+/* =========================================================
+   CONFIG & CONSTANTS
+   ========================================================= */
+const TABLES=['Settings','Customers','Suppliers','Products','Kardex','Purchases','Sales','Repairs','Warranties','Expenses'];
+const NUMF={Products:['price','avgCost','stock','minStock','warrantyDays'],Kardex:['qtyIn','qtyOut','unitCost','balanceQty','balanceAvgCost','balanceValue'],Purchases:['total'],Sales:['subtotal','discount','tax','total','cost','profit'],Repairs:['estimate','labor','deposit','total','warrantyDays'],Expenses:['amount']};
+const ARRF={Purchases:['items'],Sales:['items'],Repairs:['parts','history'],Warranties:['claims']};
+const REPAIR_STATUS=['Received','Diagnosing','Waiting Approval','Waiting Parts','In Repair','Ready','Delivered','Cancelled'];
+const DEVICE_TYPES=['Phone','iPad / Tablet','Laptop','Desktop','Game Console','Smartwatch','Other'];
+const CATEGORIES=['Phones','Tablets / iPads','Laptops','Desktops','Accessories','Parts','Chargers & Cables','Storage','Networking','Services','Other'];
+const KINDS=['Product','Part','Service'];
+const PAYMENTS=['Cash','Debit','Credit Card','E-Transfer','Other'];
+const EXP_CATS=['Rent','Utilities','Payroll','Parts & Supplies','Tools & Equipment','Marketing','Software','Insurance','Shipping','Taxes & Fees','Other'];
+const PRIORITIES=['Normal','High','Low'];
+const DEFAULTS={storeName:'My Tech Store',address:'',phone:'',email:'',taxRate:5,taxLabel:'GST',currency:'CAD',repairWarrantyDays:90,technicians:'Tech 1, Tech 2',allowNegativeStock:'No',receiptFooter:'Thank you for your business!',warrantyTerms:'Warranty covers defects in parts and workmanship for the period stated. It does not cover physical damage, liquid damage, drops, misuse, unauthorized repairs or software issues. Keep this document and present it with the device for any claim.',repairTerms:'The store is not responsible for data loss; please back up your device. Devices not picked up within 90 days after notice of completion may be disposed of. Diagnostic fees may apply if the repair is declined.'};
+
+/* =========================================================
+   I18N (English / Español)
+   ========================================================= */
+const ES={'Dashboard':'Panel','Point of Sale':'Punto de venta','Sales':'Ventas','Repairs':'Reparaciones','Warranties':'Garantías','Customers':'Clientes','Inventory':'Inventario','Kardex':'Kárdex','Purchases':'Compras','Suppliers':'Proveedores','Expenses':'Gastos','Reports':'Reportes','Settings':'Configuración',
+'Sales & Repair Manager':'Gestión de ventas y reparaciones','Refresh':'Actualizar','Google Sheets':'Google Sheets','Local (this browser)':'Local (este navegador)',
+'Sales today':'Ventas hoy','Net sales this month':'Ventas netas del mes','Gross profit this month':'Utilidad bruta del mes','Expenses this month':'Gastos del mes','Net profit this month':'Utilidad neta del mes','Open repairs':'Reparaciones abiertas','Ready for pickup':'Listas para entregar','Overdue repairs':'Reparaciones atrasadas','Low stock items':'Artículos con stock bajo','Warranties expiring (30 days)':'Garantías por vencer (30 días)','Inventory value (cost)':'Valor del inventario (costo)','Repairs by status':'Reparaciones por estado','Recent sales':'Ventas recientes','Low stock':'Stock bajo',
+'Search':'Buscar','Search by name, SKU, brand, model…':'Buscar por nombre, SKU, marca, modelo…','New':'Nuevo','Add':'Agregar','Edit':'Editar','Delete':'Eliminar','Save':'Guardar','Cancel':'Cancelar','Close':'Cerrar','Print':'Imprimir','View':'Ver','Back':'Volver','Confirm':'Confirmar','Yes':'Sí','No':'No','All':'Todos','Actions':'Acciones','Notes':'Notas','Date':'Fecha','Total':'Total','Subtotal':'Subtotal','Discount':'Descuento','Tax':'Impuesto','Profit':'Utilidad','Cost':'Costo','Price':'Precio','Qty':'Cant.','Status':'Estado','Payment':'Pago','Customer':'Cliente','Product':'Producto','Description':'Descripción','Amount':'Monto','Category':'Categoría','Type':'Tipo','Reference':'Referencia','Number':'Número','From':'Desde','To':'Hasta','Items':'Artículos',
+'Name':'Nombre','Phone':'Teléfono','Email':'Correo','Address':'Dirección','Contact':'Contacto','Walk-in':'Cliente de mostrador','New customer':'Nuevo cliente','Customer history':'Historial del cliente','Total spent':'Total gastado','Last visit':'Última visita','Visits':'Visitas',
+'SKU':'SKU','Kind':'Tipo','Brand':'Marca','Model':'Modelo','Stock':'Existencia','Min stock':'Stock mínimo','Avg cost':'Costo promedio','Margin':'Margen','Value':'Valor','Location':'Ubicación','Active':'Activo','Warranty days':'Días de garantía','Initial stock':'Stock inicial','Initial unit cost':'Costo unitario inicial','New product':'Nuevo producto','Adjust stock':'Ajustar stock','Product':'Producto','Part':'Repuesto','Service':'Servicio','Only low stock':'Solo stock bajo',
+'Phones':'Teléfonos','Tablets / iPads':'Tabletas / iPads','Laptops':'Laptops','Desktops':'Computadoras de escritorio','Accessories':'Accesorios','Parts':'Repuestos','Chargers & Cables':'Cargadores y cables','Storage':'Almacenamiento','Networking':'Redes','Services':'Servicios','Other':'Otro',
+'Cart':'Carrito','Custom item':'Artículo libre','Complete sale':'Completar venta','Clear':'Limpiar','Serial / IMEI':'Serie / IMEI','Cart is empty':'El carrito está vacío','Sale completed':'Venta completada','Receipt':'Recibo','Invoice':'Factura','Void':'Anulada','Void sale':'Anular venta','Completed':'Completada','Sale voided':'Venta anulada','Insufficient stock for':'Stock insuficiente para',
+'Cash':'Efectivo','Debit':'Débito','Credit Card':'Tarjeta de crédito','E-Transfer':'Transferencia electrónica',
+'New repair':'Nueva reparación','Repair order':'Orden de reparación','Work order':'Orden de trabajo','Device':'Equipo','Device type':'Tipo de equipo','Accessories received':'Accesorios recibidos','Condition':'Estado físico','Problem reported':'Falla reportada','Diagnosis':'Diagnóstico','Technician':'Técnico','Priority':'Prioridad','Promised date':'Fecha prometida','Estimate':'Presupuesto','Labor':'Mano de obra','Deposit':'Anticipo','Date in':'Fecha ingreso','Date out':'Fecha salida','Balance due':'Saldo pendiente','Parts used':'Repuestos usados','Add part':'Agregar repuesto','Update status':'Actualizar estado','Deliver & charge':'Entregar y cobrar','History':'Historial','Or create new customer':'O crear cliente nuevo','New customer name':'Nombre del cliente nuevo','New customer phone':'Teléfono del cliente nuevo','Repair delivered':'Reparación entregada','Status updated':'Estado actualizado','Normal':'Normal','High':'Alta','Low':'Baja',
+'Received':'Recibido','Diagnosing':'En diagnóstico','Waiting Approval':'Esperando aprobación','Waiting Parts':'Esperando repuestos','In Repair':'En reparación','Ready':'Listo','Delivered':'Entregado','Cancelled':'Cancelado',
+'Phone':'Teléfono','iPad / Tablet':'iPad / Tableta','Laptop':'Laptop','Desktop':'PC de escritorio','Game Console':'Consola de videojuegos','Smartwatch':'Reloj inteligente',
+'Warranty':'Garantía','Warranty certificate':'Certificado de garantía','Start':'Inicio','End':'Fin','Expired':'Vencida','Claims':'Reclamos','New claim':'Nuevo reclamo','Issue':'Problema','Resolution':'Resolución','Record only':'Solo registrar','Create warranty repair order':'Crear orden de reparación por garantía','Expiring (30 days)':'Por vencer (30 días)','Warranty terms':'Términos de garantía','Repair terms':'Términos de reparación','Days left':'Días restantes','Claim saved':'Reclamo guardado',
+'Movement':'Movimiento','In':'Entrada','Out':'Salida','Unit cost':'Costo unit.','Balance qty':'Saldo cant.','Balance value':'Saldo valor','Select a product':'Seleccione un producto','All movements':'Todos los movimientos','Opening':'Saldo inicial','Purchase':'Compra','Sale':'Venta','Adjustment in':'Ajuste entrada','Adjustment out':'Ajuste salida','Physical count':'Conteo físico','Repair':'Reparación','Sale void':'Anulación de venta','Counted qty':'Cantidad contada','Quantity':'Cantidad',
+'New purchase':'Nueva compra','Supplier':'Proveedor','Supplier invoice #':'Factura del proveedor #','Add line':'Agregar línea','Purchase saved':'Compra registrada','New supplier':'Nuevo proveedor',
+'New expense':'Nuevo gasto','Rent':'Alquiler','Utilities':'Servicios públicos','Payroll':'Nómina','Parts & Supplies':'Repuestos e insumos','Tools & Equipment':'Herramientas y equipo','Marketing':'Mercadeo','Software':'Software','Insurance':'Seguros','Shipping':'Envíos','Taxes & Fees':'Impuestos y comisiones',
+'Income statement':'Estado de resultados','Net sales':'Ventas netas','Product sales':'Venta de productos','Repair services':'Servicios de reparación','Cost of goods sold':'Costo de ventas','Gross profit':'Utilidad bruta','Gross margin':'Margen bruto','Operating expenses':'Gastos operativos','Net profit':'Utilidad neta','Tax collected':'Impuesto cobrado','By payment method':'Por método de pago','Top products':'Productos más vendidos','Top customers':'Mejores clientes','Repairs summary':'Resumen de reparaciones','By technician':'Por técnico','Expenses by category':'Gastos por categoría','Export CSV':'Exportar CSV','Transactions':'Transacciones','Avg turnaround (days)':'Tiempo promedio (días)','Revenue':'Ingresos','Count':'Cantidad',
+'Store name':'Nombre de la tienda','Tax rate %':'Tasa de impuesto %','Tax label':'Nombre del impuesto','Currency':'Moneda','Default repair warranty (days)':'Garantía de reparación por defecto (días)','Technicians (comma separated)':'Técnicos (separados por coma)','Allow negative stock':'Permitir stock negativo','Receipt footer':'Pie del recibo','Language':'Idioma','Backup':'Respaldo','Export backup (JSON)':'Exportar respaldo (JSON)','Import backup (JSON)':'Importar respaldo (JSON)','Load demo data':'Cargar datos de demostración','Settings saved':'Configuración guardada','Saved':'Guardado','Deleted':'Eliminado','Error':'Error','Required field':'Campo obligatorio','Are you sure?':'¿Está seguro?','Cannot delete: has history. Mark it inactive instead.':'No se puede eliminar: tiene historial. Márquelo como inactivo.','Data is stored in':'Los datos se guardan en','Signature':'Firma','Customer signature':'Firma del cliente','Store':'Tienda','Nothing here yet':'Aún no hay registros','Print receipt':'Imprimir recibo','Print work order':'Imprimir orden','Print invoice':'Imprimir factura','Print certificate':'Imprimir certificado','Paid with':'Pagado con','Deposit received':'Anticipo recibido','Import finished':'Importación finalizada','Import is only available in local mode. In Google Sheets mode paste data into the tabs.':'La importación solo está disponible en modo local. En modo Google Sheets pegue los datos en las pestañas.',
+'User':'Usuario','Balance':'Saldo','Customer notes':'Notas del cliente','Due':'Pendiente','Total items':'Total artículos','Qty sold':'Cant. vendida','Line':'Línea','Remove':'Quitar'};
+let LANG=(()=>{try{return localStorage.getItem('aibs_lang')||'en'}catch(e){return 'en'}})();
+const t=s=>LANG==='es'?(ES[s]||s):s;
+function setLang(l){LANG=l;try{localStorage.setItem('aibs_lang',l)}catch(e){}render()}
+
+/* =========================================================
+   UTILITIES
+   ========================================================= */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const num=v=>{const n=parseFloat(v);return isFinite(n)?n:0};
+const r2=n=>Math.round(num(n)*100)/100;
+const r4=n=>Math.round(num(n)*10000)/10000;
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+const pad=n=>String(n).padStart(2,'0');
+const isoOf=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+const nowISO=()=>isoOf(new Date());
+const today=()=>nowISO().slice(0,10);
+const addDays=(ds,n)=>{const d=new Date(String(ds).slice(0,10)+'T12:00:00');d.setDate(d.getDate()+Number(n||0));return isoOf(d).slice(0,10)};
+const daysBetween=(a,b)=>Math.round((new Date(String(b).slice(0,10)+'T12:00:00')-new Date(String(a).slice(0,10)+'T12:00:00'))/864e5);
+const fdate=s=>s?String(s).slice(0,10):'';
+const fdt=s=>s?String(s).slice(0,16).replace('T',' '):'';
+const money=n=>{try{return new Intl.NumberFormat('en-CA',{style:'currency',currency:S.currency||'CAD'}).format(num(n))}catch(e){return '$'+num(n).toFixed(2)}};
+const qfmt=n=>{n=num(n);return Number.isInteger(n)?String(n):n.toFixed(2)};
+const sum=(arr,f)=>arr.reduce((a,r)=>a+num(typeof f==='function'?f(r):r[f]),0);
+const byId=(tb,id)=>DB[tb].find(r=>r.id===id);
+const custName=id=>{const c=id&&byId('Customers',id);return c?c.name:t('Walk-in')};
+const badge=s=>`<span class="badge b-${esc(String(s).replace(/\s+/g,'-'))}">${esc(t(s))}</span>`;
+const opts=(list,sel)=>list.map(o=>{const [v,l]=Array.isArray(o)?o:[o,t(o)];return `<option value="${esc(v)}" ${String(v)===String(sel)?'selected':''}>${esc(l)}</option>`}).join('');
+const netOf=s=>num(s.subtotal)-num(s.discount);
+const techs=()=>String(S.technicians||'').split(',').map(x=>x.trim()).filter(Boolean);
+const custOpts=sel=>[['',t('Walk-in')]].concat(DB.Customers.slice().sort((a,b)=>String(a.name).localeCompare(b.name)).map(c=>[c.id,c.name+(c.phone?' · '+c.phone:'')]));
+
+function toast(msg,cls){const d=document.createElement('div');if(cls)d.className=cls;d.textContent=msg;$('#toast').appendChild(d);setTimeout(()=>d.remove(),cls==='err'?6000:2800)}
+function busy(on){$('#busy').classList.toggle('hidden',!on)}
+function openModal(title,html,wide){$('#mtitle').textContent=title;$('#mbody').innerHTML=html;$('.mbox').style.maxWidth=wide?'1000px':'760px';$('#modal').classList.remove('hidden')}
+function closeModal(){$('#modal').classList.add('hidden');$('#mbody').innerHTML=''}
+function fail(msg){const e=new Error(msg);throw e}
+function confirmBox(msg,fn,btn){openModal(t('Confirm'),`<p>${esc(msg)}</p><div class="actions"><button class="btn ghost" onclick="closeModal()">${t('Cancel')}</button><button class="btn ${btn||'bad'}" id="cfOk">${t('Confirm')}</button></div>`);$('#cfOk').onclick=async()=>{try{await fn();closeModal()}catch(e){if(!e._shown)toast(e.message,'err')}}}
+function printHTML(html){$('#print').innerHTML=html;setTimeout(()=>window.print(),50)}
+function download(name,text,type){try{const b=new Blob([text],{type:type||'text/plain'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500)}catch(e){toast(e.message,'err')}}
+function toCSV(rows){if(!rows.length)return '';const keys=Object.keys(rows.reduce((a,r)=>Object.assign(a,r),{}));const q=v=>{v=v==null?'':typeof v==='object'?JSON.stringify(v):String(v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};return keys.join(',')+'\n'+rows.map(r=>keys.map(k=>q(r[k])).join(',')).join('\n')}
+
+/* =========================================================
+   DATA LAYER  (Google Sheets via Apps Script, or local browser storage)
+   ========================================================= */
+let DB={};TABLES.forEach(x=>DB[x]=[]);
+let S=Object.assign({},DEFAULTS);
+let USER='';
+const IS_GAS=typeof google!=='undefined'&&google.script&&google.script.run;
+const PREFIX={Sales:'INV-',Repairs:'RO-',Warranties:'WAR-',Purchases:'PO-'};
+
+const LocalDB={
+  key:'aibs_db_v1',
+  load(){let d={};try{d=JSON.parse(localStorage.getItem(this.key)||'{}')}catch(e){}TABLES.forEach(x=>d[x]=d[x]||[]);return d},
+  save(d){try{localStorage.setItem(this.key,JSON.stringify(d))}catch(e){toast('Browser storage error: '+e.message,'err')}},
+  seq(d,table){const k='seq_'+table;let r=d.Settings.find(x=>x.id===k);if(!r){r={id:k,value:0};d.Settings.push(r)}r.value=num(r.value)+1;return (PREFIX[table]||'')+String(r.value).padStart(5,'0')},
+  commit(ops){const d=this.load();const nums={};const out=[];
+    ops.forEach(op=>{const rec=JSON.parse(JSON.stringify(op.record||{}));const arr=d[op.table];const i=arr.findIndex(r=>r.id===rec.id);
+      if(op.action==='delete'){if(i>=0)arr.splice(i,1)}
+      else{if(rec.number==='AUTO')rec.number=this.seq(d,op.table);if(rec.number)nums[rec.id]=rec.number;
+        Object.keys(rec).forEach(k=>{if(typeof rec[k]==='string'&&rec[k].indexOf('@@num:')===0)rec[k]=nums[rec[k].slice(6)]||''});
+        if(i>=0)arr[i]=rec;else arr.push(rec)}
+      out.push({table:op.table,action:op.action,record:rec})});
+    this.save(d);return out}
+};
+const API={
+  load(){if(IS_GAS)return new Promise((res,rej)=>google.script.run.withSuccessHandler(s=>res(JSON.parse(s))).withFailureHandler(rej).apiLoad());return Promise.resolve(LocalDB.load())},
+  commit(ops){if(IS_GAS)return new Promise((res,rej)=>google.script.run.withSuccessHandler(s=>res(JSON.parse(s))).withFailureHandler(rej).apiCommit(JSON.stringify(ops)));return Promise.resolve(LocalDB.commit(ops))}
+};
+function normalize(tb,r){(NUMF[tb]||[]).forEach(k=>r[k]=num(r[k]));(ARRF[tb]||[]).forEach(k=>{if(typeof r[k]==='string'){try{r[k]=JSON.parse(r[k])}catch(e){r[k]=[]}}if(!Array.isArray(r[k]))r[k]=[]});
+  ['id','number','sku','phone','serial','refNumber'].forEach(k=>{if(r[k]!=null&&typeof r[k]!=='string')r[k]=String(r[k])});return r}
+function loadSettings(){S=Object.assign({},DEFAULTS);DB.Settings.forEach(r=>{if(!String(r.id).startsWith('seq_'))S[r.id]=r.value});S.taxRate=num(S.taxRate);S.repairWarrantyDays=num(S.repairWarrantyDays)}
+async function loadAll(){busy(true);try{const d=await API.load();USER=d._user||'';TABLES.forEach(x=>DB[x]=(d[x]||[]).map(r=>normalize(x,r)));loadSettings()}catch(e){toast(t('Error')+': '+(e.message||e),'err')}finally{busy(false)}render()}
+function applySaved(s){const arr=DB[s.table];const i=arr.findIndex(r=>r.id===s.record.id);if(s.action==='delete'){if(i>=0)arr.splice(i,1)}else{const r=normalize(s.table,s.record);if(i>=0)arr[i]=r;else arr.push(r)}}
+
+class Tx{
+  constructor(){this.ops=[];this.cache={}}
+  get(tb,id){const k=tb+':'+id;if(!(k in this.cache)){const o=byId(tb,id);this.cache[k]=o?JSON.parse(JSON.stringify(o)):null}return this.cache[k]}
+  put(tb,rec){this.ops.push({table:tb,action:'upsert',record:rec});return rec}
+  del(tb,id){this.ops.push({table:tb,action:'delete',record:{id}})}
+  /* Kardex movement with weighted-average cost */
+  move(pid,o){const p=this.get('Products',pid);if(!p||p.kind==='Service')return 0;
+    const qIn=num(o.qtyIn),qOut=num(o.qtyOut);let q=num(p.stock),avg=num(p.avgCost),uc=num(o.unitCost);
+    if(qIn>0){const nq=q+qIn;avg=nq>0?(Math.max(q,0)*avg+qIn*uc)/(Math.max(q,0)+qIn):uc;q=nq}
+    if(qOut>0){uc=avg;q=q-qOut}
+    p.stock=r4(q);p.avgCost=r4(avg);
+    this.put('Kardex',{id:uid(),date:o.date||nowISO(),productId:pid,sku:p.sku,type:o.type,ref:o.ref||'',qtyIn:qIn,qtyOut:qOut,unitCost:r4(uc),balanceQty:p.stock,balanceAvgCost:p.avgCost,balanceValue:r2(p.stock*p.avgCost),notes:o.notes||'',user:USER});
+    this.put('Products',p);return uc}
+  async commit(){const seen=new Set();const ops=[];
+    for(let i=this.ops.length-1;i>=0;i--){const o=this.ops[i];const k=o.table+':'+o.record.id+':'+o.action;if(o.action==='upsert'&&seen.has(k))continue;seen.add(k);ops.unshift(o)}
+    busy(true);try{const saved=await API.commit(ops);saved.forEach(applySaved);return saved}
+    catch(e){toast(t('Error')+': '+(e.message||e),'err');e._shown=true;throw e}
+    finally{busy(false)}}
+}
+async function saveOne(tb,rec){const tx=new Tx();tx.put(tb,rec);const s=await tx.commit();return s[0].record}
+
+/* =========================================================
+   NAVIGATION & RENDER
+   ========================================================= */
+const NAV=[['dashboard','Dashboard'],['pos','Point of Sale'],['sales','Sales'],['repairs','Repairs'],['warranties','Warranties'],['customers','Customers'],['inventory','Inventory'],['kardex','Kardex'],['purchases','Purchases'],['suppliers','Suppliers'],['expenses','Expenses'],['reports','Reports'],['settings','Settings']];
+let VIEW='dashboard',ARG=null;const F={};
+function go(v,arg){VIEW=v;ARG=arg||null;$('#nav').classList.remove('open');render();window.scrollTo(0,0)}
+function render(){
+  $('#nav').innerHTML=`<div class="brand">${esc(S.storeName)}<small>${t('Sales & Repair Manager')}</small></div>`+NAV.map(([k,l])=>`<a class="${VIEW===k||(VIEW==='repair'&&k==='repairs')||(VIEW==='customer'&&k==='customers')?'on':''}" onclick="go('${k}')">${t(l)}</a>`).join('');
+  const title=(NAV.find(n=>n[0]===VIEW)||[0,VIEW==='repair'?'Repair order':VIEW==='customer'?'Customer history':''])[1];
+  $('#top').innerHTML=`<button id="menuBtn" class="btn ghost sm" onclick="$('#nav').classList.toggle('open')">☰</button><h1>${t(title)}</h1><span class="badge">${IS_GAS?t('Google Sheets'):t('Local (this browser)')}</span>${USER?`<span class="mut">${esc(USER)}</span>`:''}<button class="btn ghost sm" onclick="setLang(LANG==='en'?'es':'en')">${LANG==='en'?'ES':'EN'}</button><button class="btn ghost sm" onclick="loadAll()">${t('Refresh')}</button>`;
+  const V=VIEWS[VIEW]||VIEWS.dashboard;$('#view').innerHTML=V.html();if(V.after)V.after();
+}
+const VIEWS={};
+
+/* ---------- Form builder ---------- */
+function formModal(title,fields,data,onSave,wide){
+  const h=fields.map(f=>{const v=data[f.k]??f.def??'';let inp;
+    if(f.type==='select')inp=`<select name="${f.k}">${opts(f.opts,v)}</select>`;
+    else if(f.type==='textarea')inp=`<textarea name="${f.k}" rows="3">${esc(v)}</textarea>`;
+    else inp=`<input name="${f.k}" type="${f.type||'text'}" ${f.type==='number'?'step="any"':''} value="${esc(v)}" ${f.req?'required':''}>`;
+    return `<label class="${f.full?'full':''}"><span>${t(f.label)}${f.req?' *':''}</span>${inp}</label>`}).join('');
+  openModal(title,`<form id="mf" class="grid2">${h}<div class="full actions"><button type="button" class="btn ghost" onclick="closeModal()">${t('Cancel')}</button><button class="btn">${t('Save')}</button></div></form>`,wide);
+  $('#mf').onsubmit=async e=>{e.preventDefault();const fd=new FormData(e.target);const out={};fields.forEach(f=>{const v=fd.get(f.k);out[f.k]=f.type==='number'?num(v):String(v??'').trim()});
+    try{await onSave(out);closeModal();render()}catch(err){if(!err._shown)toast(err.message,'err')}};
+}
+
+/* =========================================================
+   DASHBOARD
+   ========================================================= */
+function wStatus(w){if(w.status==='Void')return 'Void';if(w.endDate&&fdate(w.endDate)<today())return 'Expired';return 'Active'}
+VIEWS.dashboard={html(){
+  const td=today(),m=td.slice(0,7);const sales=DB.Sales.filter(s=>s.status!=='Void');
+  const mS=sales.filter(s=>String(s.date).slice(0,7)===m);const exp=sum(DB.Expenses.filter(e=>String(e.date).slice(0,7)===m),'amount');
+  const open=DB.Repairs.filter(r=>!['Delivered','Cancelled'].includes(r.status));const ready=open.filter(r=>r.status==='Ready');
+  const overdue=open.filter(r=>r.promisedDate&&fdate(r.promisedDate)<td&&r.status!=='Ready');
+  const low=DB.Products.filter(p=>p.kind!=='Service'&&p.active!=='No'&&num(p.stock)<=num(p.minStock));
+  const expW=DB.Warranties.filter(w=>wStatus(w)==='Active'&&fdate(w.endDate)<=addDays(td,30));
+  const inv=sum(DB.Products.filter(p=>p.kind!=='Service'),p=>Math.max(0,p.stock)*p.avgCost);
+  const gp=sum(mS,'profit');
+  const k=(l,v,c,go_)=>`<div class="kpi ${c||''}" ${go_?`style="cursor:pointer" onclick="${go_}"`:''}><div class="l">${t(l)}</div><div class="v">${v}</div></div>`;
+  const byStatus=REPAIR_STATUS.filter(s=>!['Delivered','Cancelled'].includes(s)).map(s=>[s,open.filter(r=>r.status===s).length]);
+  return `<div class="kpis">${k('Sales today',money(sum(sales.filter(s=>fdate(s.date)===td),'total')),'','go(\'sales\')')}${k('Net sales this month',money(sum(mS,netOf)))}${k('Gross profit this month',money(gp),'ok')}${k('Expenses this month',money(exp))}${k('Net profit this month',money(gp-exp),gp-exp<0?'bad':'ok')}${k('Inventory value (cost)',money(inv))}${k('Open repairs',open.length,'','go(\'repairs\')')}${k('Ready for pickup',ready.length,'ok','F.rs=\'Ready\';go(\'repairs\')')}${k('Overdue repairs',overdue.length,overdue.length?'bad':'')}${k('Low stock items',low.length,low.length?'warn':'','F.low=1;go(\'inventory\')')}${k('Warranties expiring (30 days)',expW.length,expW.length?'warn':'','F.ws=\'exp\';go(\'warranties\')')}</div>
+  <div class="grid3">
+   <div class="card"><h3>${t('Repairs by status')}</h3><table>${byStatus.map(([s,n])=>`<tr class="click" onclick="F.rs='${s}';go('repairs')"><td>${badge(s)}</td><td class="n bold">${n}</td></tr>`).join('')}</table></div>
+   <div class="card"><h3>${t('Low stock')}</h3>${low.length?`<table><tr><th>${t('Product')}</th><th class="n">${t('Stock')}</th><th class="n">${t('Min stock')}</th></tr>${low.slice(0,10).map(p=>`<tr><td>${esc(p.name)}</td><td class="n bold" style="color:var(--bad)">${qfmt(p.stock)}</td><td class="n">${qfmt(p.minStock)}</td></tr>`).join('')}</table>`:`<div class="empty">✓</div>`}</div>
+   <div class="card"><h3>${t('Recent sales')}</h3>${tblSalesMini(DB.Sales.slice().sort((a,b)=>String(b.date).localeCompare(a.date)).slice(0,8))}</div>
+  </div>
+  ${overdue.length?`<div class="card"><h3>${t('Overdue repairs')}</h3>${tblRepairs(overdue)}</div>`:''}`}};
+function tblSalesMini(rows){if(!rows.length)return `<div class="empty">${t('Nothing here yet')}</div>`;return `<table>${rows.map(s=>`<tr class="click" onclick="showReceipt('${s.id}')"><td>${esc(s.number)}<div class="mut">${esc(custName(s.customerId))}</div></td><td class="n">${money(s.total)}${s.status==='Void'?'<br>'+badge('Void'):''}</td></tr>`).join('')}</table>`}
+
+/* =========================================================
+   POINT OF SALE
+   ========================================================= */
+let CART=null;function newCart(){CART={customerId:'',lines:[],discount:0,payment:'Cash',notes:''}}
+VIEWS.pos={html(){if(!CART)newCart();return `<div class="pos"><div class="card"><h3>${t('Products')}</h3><input id="pq" placeholder="${t('Search by name, SKU, brand, model…')}" oninput="posSearch()"><div id="pres" class="plist" style="margin-top:10px"></div></div><div class="card" id="cart"></div></div>`},after(){posSearch();renderCart();$('#pq').focus()}};
+function posSearch(){const q=($('#pq').value||'').toLowerCase();const list=DB.Products.filter(p=>p.active!=='No'&&(!q||[p.name,p.sku,p.brand,p.model,p.category].join(' ').toLowerCase().includes(q))).slice(0,40);
+  $('#pres').innerHTML=list.length?list.map(p=>`<div class="pitem" onclick="posAdd('${p.id}')"><div><b>${esc(p.name)}</b><div class="mut">${esc(p.sku)} · ${esc([p.brand,p.model].filter(Boolean).join(' '))}</div></div><div class="right"><b>${money(p.price)}</b><div class="mut">${p.kind==='Service'?t('Service'):t('Stock')+': '+qfmt(p.stock)}</div></div></div>`).join(''):`<div class="empty">${t('Nothing here yet')}</div>`}
+function posAdd(id){const p=byId('Products',id);const ex=CART.lines.find(l=>l.productId===id&&!l.serial);if(ex)ex.qty++;else CART.lines.push({productId:id,sku:p.sku,name:p.name,kind:p.kind,qty:1,price:num(p.price),warrantyDays:num(p.warrantyDays),serial:''});renderCart()}
+function posCustom(){CART.lines.push({productId:'',sku:'',name:t('Custom item'),kind:'Service',qty:1,price:0,warrantyDays:0,serial:''});renderCart()}
+function cartTotals(){const sub=r2(sum(CART.lines,l=>l.qty*l.price));const disc=r2(CART.discount);const net=r2(sub-disc);const tax=r2(net*S.taxRate/100);return{sub,disc,net,tax,total:r2(net+tax)}}
+function renderCart(){const T=cartTotals();
+  $('#cart').innerHTML=`<h3>${t('Cart')}</h3><div class="bar"><select class="grow" onchange="CART.customerId=this.value">${opts(custOpts(),CART.customerId)}</select><button class="btn ghost sm" onclick="editCustomer(null,c=>{CART.customerId=c.id;render()})">+ ${t('New customer')}</button></div>
+  ${CART.lines.length?`<div class="tw"><table><tr><th>${t('Product')}</th><th>${t('Serial / IMEI')}</th><th class="n">${t('Qty')}</th><th class="n">${t('Price')}</th><th class="n">${t('Warranty days')}</th><th class="n">${t('Total')}</th><th></th></tr>
+  ${CART.lines.map((l,i)=>`<tr><td>${l.productId?esc(l.name):`<input value="${esc(l.name)}" onchange="CART.lines[${i}].name=this.value">`}</td><td><input value="${esc(l.serial)}" style="min-width:110px" onchange="CART.lines[${i}].serial=this.value"></td><td class="n"><input type="number" step="any" min="0" value="${l.qty}" style="width:70px" onchange="CART.lines[${i}].qty=num(this.value);renderCart()"></td><td class="n"><input type="number" step="any" value="${l.price}" style="width:95px" onchange="CART.lines[${i}].price=num(this.value);renderCart()"></td><td class="n"><input type="number" value="${l.warrantyDays}" style="width:70px" onchange="CART.lines[${i}].warrantyDays=num(this.value)"></td><td class="n">${money(l.qty*l.price)}</td><td><button class="btn ghost sm" onclick="CART.lines.splice(${i},1);renderCart()">✕</button></td></tr>`).join('')}</table></div>`:`<div class="empty">${t('Cart is empty')}</div>`}
+  <div class="bar" style="margin-top:10px"><button class="btn ghost sm" onclick="posCustom()">+ ${t('Custom item')}</button></div>
+  <div class="grid2"><label><span>${t('Discount')}</span><input type="number" step="any" value="${CART.discount}" onchange="CART.discount=num(this.value);renderCart()"></label><label><span>${t('Payment')}</span><select onchange="CART.payment=this.value">${opts(PAYMENTS,CART.payment)}</select></label><label class="full"><span>${t('Notes')}</span><input value="${esc(CART.notes)}" onchange="CART.notes=this.value"></label></div>
+  <table class="tot" style="margin-top:10px"><tr><td>${t('Subtotal')}</td><td class="n">${money(T.sub)}</td></tr><tr><td>${t('Discount')}</td><td class="n">-${money(T.disc)}</td></tr><tr><td>${esc(S.taxLabel)} ${S.taxRate}%</td><td class="n">${money(T.tax)}</td></tr><tr><td>${t('Total')}</td><td class="n">${money(T.total)}</td></tr></table>
+  <div class="actions"><button class="btn ghost" onclick="newCart();renderCart()">${t('Clear')}</button><button class="btn ok" onclick="posComplete()">${t('Complete sale')}</button></div>`}
+function checkStock(lines){if(S.allowNegativeStock==='Yes')return;const need={};lines.forEach(l=>{if(l.productId&&l.kind!=='Service')need[l.productId]=(need[l.productId]||0)+num(l.qty)});
+  Object.keys(need).forEach(id=>{const p=byId('Products',id);if(p&&num(p.stock)<need[id])fail(`${t('Insufficient stock for')} ${p.name} (${qfmt(p.stock)})`)})}
+async function posComplete(){try{
+  const lines=CART.lines.filter(l=>num(l.qty)>0);if(!lines.length)fail(t('Cart is empty'));checkStock(lines);
+  const T=cartTotals();const tx=new Tx();const saleId=uid();const date=nowISO();const items=[];
+  lines.forEach(l=>{let cost=0;if(l.productId&&l.kind!=='Service'){cost=tx.move(l.productId,{type:'SALE',qtyOut:l.qty,ref:'@@num:'+saleId,date})}items.push(Object.assign({},l,{cost:r4(cost)}))});
+  const costT=r2(sum(items,i=>i.qty*i.cost));
+  tx.ops.unshift({table:'Sales',action:'upsert',record:{id:saleId,number:'AUTO',date,customerId:CART.customerId,items,subtotal:T.sub,discount:T.disc,tax:T.tax,total:T.total,cost:costT,profit:r2(T.net-costT),payment:CART.payment,status:'Completed',repairId:'',notes:CART.notes,user:USER}});
+  items.filter(i=>num(i.warrantyDays)>0).forEach(i=>{for(let n=0;n<(i.serial?1:Math.max(1,Math.round(i.qty)));n++)tx.put('Warranties',{id:uid(),number:'AUTO',type:'Sale',refId:saleId,refNumber:'@@num:'+saleId,customerId:CART.customerId,description:i.name,serial:i.serial||'',startDate:today(),endDate:addDays(today(),i.warrantyDays),status:'Active',claims:[],notes:''})});
+  await tx.commit();newCart();toast(t('Sale completed'));render();showReceipt(saleId);
+}catch(e){if(!e._shown)toast(e.message,'err')}}
+
+/* ---------- Printable documents ---------- */
+function docHead(title,no,date){return `<div class="hd"><div><h2>${esc(S.storeName)}</h2><div>${esc(S.address)}</div><div>${esc(S.phone)} ${esc(S.email)}</div></div><div class="right"><h2>${esc(title)}</h2><div><b>${esc(no)}</b></div><div>${fdt(date)}</div></div></div>`}
+function receiptHTML(s){const c=byId('Customers',s.customerId);const ws=DB.Warranties.filter(w=>w.refId===s.id);
+  return `<div class="doc">${docHead(t('Invoice'),s.number,s.date)}${s.status==='Void'?`<h2 style="color:#dc2626">${t('Void').toUpperCase()}</h2>`:''}
+  <p><b>${t('Customer')}:</b> ${esc(c?c.name:t('Walk-in'))} ${c&&c.phone?' · '+esc(c.phone):''}</p>
+  <table><tr><th>${t('Description')}</th><th>${t('Serial / IMEI')}</th><th class="n">${t('Qty')}</th><th class="n">${t('Price')}</th><th class="n">${t('Total')}</th></tr>${(s.items||[]).map(i=>`<tr><td>${esc(i.name)}${num(i.warrantyDays)?`<div class="mut">${t('Warranty')}: ${i.warrantyDays} d</div>`:''}</td><td>${esc(i.serial)}</td><td class="n">${qfmt(i.qty)}</td><td class="n">${money(i.price)}</td><td class="n">${money(i.qty*i.price)}</td></tr>`).join('')}</table>
+  <table class="tot" style="width:280px;margin-left:auto;margin-top:8px"><tr><td>${t('Subtotal')}</td><td class="n">${money(s.subtotal)}</td></tr><tr><td>${t('Discount')}</td><td class="n">-${money(s.discount)}</td></tr><tr><td>${esc(S.taxLabel)}</td><td class="n">${money(s.tax)}</td></tr><tr><td>${t('Total')}</td><td class="n">${money(s.total)}</td></tr></table>
+  <p>${t('Paid with')}: ${esc(t(s.payment))}</p>${ws.length?`<p><b>${t('Warranties')}:</b> ${ws.map(w=>`${esc(w.number)} (${esc(w.description)} → ${fdate(w.endDate)})`).join('; ')}</p><p class="mut" style="font-size:11px">${esc(S.warrantyTerms)}</p>`:''}
+  <p style="text-align:center;margin-top:16px">${esc(S.receiptFooter)}</p></div>`}
+function showReceipt(id){const s=byId('Sales',id);if(!s)return;openModal(t('Receipt')+' '+s.number,receiptHTML(s)+`<div class="actions">${s.status!=='Void'?`<button class="btn bad" onclick="voidSale('${s.id}')">${t('Void sale')}</button>`:''}<button class="btn" onclick="printHTML(receiptHTML(byId('Sales','${s.id}')))">${t('Print')}</button></div>`,true)}
+function voidSale(id){confirmBox(t('Void sale')+'? '+t('Are you sure?'),async()=>{const tx=new Tx();const s=tx.get('Sales',id);if(s.status==='Void')return;
+  (s.items||[]).forEach(i=>{if(i.productId&&i.kind!=='Service')tx.move(i.productId,{type:'VOID',qtyIn:i.qty,unitCost:i.cost,ref:s.number})});
+  s.status='Void';tx.ops.unshift({table:'Sales',action:'upsert',record:s});
+  DB.Warranties.filter(w=>w.refId===id||(s.repairId&&w.refId===s.repairId&&w.type==='Repair')).forEach(w0=>{const w=tx.get('Warranties',w0.id);w.status='Void';tx.put('Warranties',w)});
+  if(s.repairId){const r=tx.get('Repairs',s.repairId);if(r){r.status='Ready';r.saleId='';r.dateOut='';r.history=(r.history||[]).concat([{date:nowISO(),status:'Ready',note:t('Sale voided')+' '+s.number,user:USER}]);tx.put('Repairs',r)}}
+  await tx.commit();toast(t('Sale voided'));render()})}
+
+/* =========================================================
+   SALES LIST
+   ========================================================= */
+VIEWS.sales={html(){F.sf=F.sf||today().slice(0,8)+'01';F.st=F.st||today();return `<div class="card"><div class="bar"><input class="grow" placeholder="${t('Search')}" value="${esc(F.sq||'')}" oninput="F.sq=this.value;$('#tbl').innerHTML=tblSales()"><label>${t('From')} <input type="date" value="${F.sf}" onchange="F.sf=this.value;$('#tbl').innerHTML=tblSales()"></label><label>${t('To')} <input type="date" value="${F.st}" onchange="F.st=this.value;$('#tbl').innerHTML=tblSales()"></label><button class="btn" onclick="go('pos')">+ ${t('New')}</button></div><div id="tbl" class="tw">${tblSales()}</div></div>`}};
+function tblSales(){const q=(F.sq||'').toLowerCase();const rows=DB.Sales.filter(s=>fdate(s.date)>=F.sf&&fdate(s.date)<=F.st&&(!q||[s.number,custName(s.customerId),s.payment,(s.items||[]).map(i=>i.name+' '+i.serial).join(' ')].join(' ').toLowerCase().includes(q))).sort((a,b)=>String(b.date).localeCompare(a.date));
+  if(!rows.length)return `<div class="empty">${t('Nothing here yet')}</div>`;const ok=rows.filter(s=>s.status!=='Void');
+  return `<table><tr><th>${t('Number')}</th><th>${t('Date')}</th><th>${t('Customer')}</th><th>${t('Items')}</th><th>${t('Payment')}</th><th class="n">${t('Total')}</th><th class="n">${t('Profit')}</th><th>${t('Status')}</th></tr>${rows.map(s=>`<tr class="click" onclick="showReceipt('${s.id}')"><td>${esc(s.number)}</td><td>${fdt(s.date)}</td><td>${esc(custName(s.customerId))}</td><td>${esc((s.items||[]).map(i=>i.name).join(', ').slice(0,60))}</td><td>${esc(t(s.payment))}</td><td class="n">${money(s.total)}</td><td class="n">${money(s.profit)}</td><td>${badge(s.status)}</td></tr>`).join('')}<tr class="bold"><td colspan="5">${ok.length} ${t('Transactions')}</td><td class="n">${money(sum(ok,'total'))}</td><td class="n">${money(sum(ok,'profit'))}</td><td></td></tr></table>`}
+
+/* =========================================================
+   REPAIRS
+   ========================================================= */
+VIEWS.repairs={html(){return `<div class="card"><div class="bar"><input class="grow" placeholder="${t('Search')}" value="${esc(F.rq||'')}" oninput="F.rq=this.value;$('#tbl').innerHTML=tblRepairs()"><select onchange="F.rs=this.value;$('#tbl').innerHTML=tblRepairs()">${opts([['',t('Open repairs')],['*',t('All')]].concat(REPAIR_STATUS),F.rs||'')}</select><button class="btn" onclick="editRepair()">+ ${t('New repair')}</button></div><div id="tbl" class="tw">${tblRepairs()}</div></div>`}};
+function tblRepairs(rows){if(!rows){const q=(F.rq||'').toLowerCase(),st=F.rs||'';rows=DB.Repairs.filter(r=>(st==='*'||(st?r.status===st:!['Delivered','Cancelled'].includes(r.status)))&&(!q||[r.number,custName(r.customerId),r.brand,r.model,r.serial,r.problem,r.technician].join(' ').toLowerCase().includes(q)))}
+  rows=rows.slice().sort((a,b)=>String(b.dateIn).localeCompare(a.dateIn));if(!rows.length)return `<div class="empty">${t('Nothing here yet')}</div>`;const td=today();
+  return `<table><tr><th>${t('Number')}</th><th>${t('Date in')}</th><th>${t('Customer')}</th><th>${t('Device')}</th><th>${t('Problem reported')}</th><th>${t('Technician')}</th><th>${t('Promised date')}</th><th>${t('Status')}</th><th class="n">${t('Total')}</th></tr>${rows.map(r=>`<tr class="click" onclick="go('repair','${r.id}')"><td>${esc(r.number)}${r.priority==='High'?' '+badge('High'):''}</td><td>${fdate(r.dateIn)}</td><td>${esc(custName(r.customerId))}</td><td>${esc(t(r.deviceType))}<div class="mut">${esc([r.brand,r.model].join(' '))}</div></td><td>${esc(String(r.problem||'').slice(0,70))}</td><td>${esc(r.technician)}</td><td ${r.promisedDate&&fdate(r.promisedDate)<td&&!['Delivered','Cancelled','Ready'].includes(r.status)?'style="color:var(--bad);font-weight:700"':''}>${fdate(r.promisedDate)}</td><td>${badge(r.status)}</td><td class="n">${money(repairTotal(r))}</td></tr>`).join('')}</table>`}
+const repairParts=r=>sum(r.parts||[],p=>p.qty*p.price);
+const repairTotal=r=>r2(repairParts(r)+num(r.labor));
+function editRepair(id){const r=id?byId('Repairs',id):{dateIn:today(),status:'Received',priority:'Normal',warrantyDays:S.repairWarrantyDays,technician:techs()[0]||''};
+  const fields=[{k:'customerId',label:'Customer',type:'select',opts:custOpts()},...(id?[]:[{k:'_newName',label:'New customer name'},{k:'_newPhone',label:'New customer phone'}]),
+   {k:'deviceType',label:'Device type',type:'select',opts:DEVICE_TYPES},{k:'brand',label:'Brand'},{k:'model',label:'Model'},{k:'serial',label:'Serial / IMEI'},{k:'accessories',label:'Accessories received'},{k:'condition',label:'Condition'},
+   {k:'problem',label:'Problem reported',type:'textarea',full:true,req:true},{k:'diagnosis',label:'Diagnosis',type:'textarea',full:true},
+   {k:'technician',label:'Technician',type:'select',opts:[''].concat(techs()).map(x=>[x,x])},{k:'priority',label:'Priority',type:'select',opts:PRIORITIES},{k:'promisedDate',label:'Promised date',type:'date'},{k:'estimate',label:'Estimate',type:'number'},{k:'labor',label:'Labor',type:'number'},{k:'deposit',label:'Deposit',type:'number'},{k:'warrantyDays',label:'Warranty days',type:'number'},{k:'notes',label:'Notes',type:'textarea',full:true}];
+  formModal(id?t('Edit')+' '+r.number:t('New repair'),fields,Object.assign({},r,{promisedDate:fdate(r.promisedDate)}),async v=>{
+    const tx=new Tx();let cid=v.customerId;
+    if(!id&&!cid&&v._newName){cid=uid();tx.put('Customers',{id:cid,name:v._newName,phone:v._newPhone,email:'',address:'',notes:'',createdAt:nowISO()})}
+    delete v._newName;delete v._newPhone;
+    const rec=id?Object.assign(tx.get('Repairs',id),v,{customerId:cid}):Object.assign({id:uid(),number:'AUTO',dateIn:nowISO(),status:'Received',parts:[],history:[{date:nowISO(),status:'Received',note:'',user:USER}],total:0,warrantyId:'',dateOut:'',saleId:''},v,{customerId:cid});
+    rec.total=repairTotal(rec);tx.put('Repairs',rec);const s=await tx.commit();
+    if(!id){const nr=s.find(x=>x.table==='Repairs').record;ARG=nr.id;VIEW='repair';setTimeout(()=>printWorkOrderAsk(nr.id),50)}
+  },true)}
+function printWorkOrderAsk(id){const r=byId('Repairs',id);openModal(t('Saved')+' · '+r.number,`<p>${t('Print work order')}?</p><div class="actions"><button class="btn ghost" onclick="closeModal()">${t('Close')}</button><button class="btn" onclick="closeModal();printHTML(workOrderHTML(byId('Repairs','${id}')))">${t('Print')}</button></div>`)}
+VIEWS.repair={html(){const r=byId('Repairs',ARG);if(!r)return `<div class="empty">—</div>`;const c=byId('Customers',r.customerId);const closed=['Delivered','Cancelled'].includes(r.status);const w=r.warrantyId&&byId('Warranties',r.warrantyId);
+  return `<div class="bar"><button class="btn ghost" onclick="go('repairs')">← ${t('Back')}</button><span class="grow"></span><button class="btn ghost" onclick="printHTML(workOrderHTML(byId('Repairs','${r.id}')))">${t('Print work order')}</button>${r.saleId?`<button class="btn ghost" onclick="showReceipt('${r.saleId}')">${t('Invoice')}</button>`:''}${!closed?`<button class="btn ghost" onclick="editRepair('${r.id}')">${t('Edit')}</button><button class="btn ok" onclick="deliverRepair('${r.id}')">${t('Deliver & charge')}</button>`:''}</div>
+  <div class="grid2"><div class="card"><h3>${esc(r.number)} ${badge(r.status)} ${r.priority==='High'?badge('High'):''}</h3><div class="kv">
+   <div>${t('Customer')}</div><div>${c?`<a href="#" onclick="go('customer','${c.id}');return false">${esc(c.name)}</a> · ${esc(c.phone)}`:t('Walk-in')}</div>
+   <div>${t('Device')}</div><div>${esc(t(r.deviceType))} · ${esc(r.brand)} ${esc(r.model)}</div><div>${t('Serial / IMEI')}</div><div>${esc(r.serial)}</div>
+   <div>${t('Accessories received')}</div><div>${esc(r.accessories)}</div><div>${t('Condition')}</div><div>${esc(r.condition)}</div>
+   <div>${t('Problem reported')}</div><div>${esc(r.problem)}</div><div>${t('Diagnosis')}</div><div>${esc(r.diagnosis)}</div>
+   <div>${t('Technician')}</div><div>${esc(r.technician)}</div><div>${t('Date in')}</div><div>${fdt(r.dateIn)}</div><div>${t('Promised date')}</div><div>${fdate(r.promisedDate)}</div>
+   ${r.dateOut?`<div>${t('Date out')}</div><div>${fdt(r.dateOut)}</div>`:''}<div>${t('Estimate')}</div><div>${money(r.estimate)}</div><div>${t('Deposit')}</div><div>${money(r.deposit)}</div>
+   <div>${t('Warranty')}</div><div>${w?`${esc(w.number)} → ${fdate(w.endDate)} ${badge(wStatus(w))}`:`${num(r.warrantyDays)} d`}</div>${r.notes?`<div>${t('Notes')}</div><div>${esc(r.notes)}</div>`:''}</div></div>
+  <div><div class="card"><h3>${t('Update status')}</h3>${!closed?`<div class="bar"><select id="rst">${opts(REPAIR_STATUS.filter(s=>s!=='Delivered'),r.status)}</select><input id="rnote" class="grow" placeholder="${t('Notes')}"><button class="btn" onclick="setRepairStatus('${r.id}')">${t('Save')}</button></div>`:''}
+   <div class="tl">${(r.history||[]).slice().reverse().map(h=>`<div>${badge(h.status)} <span class="mut">${fdt(h.date)} ${esc(h.user||'')}</span>${h.note?`<div>${esc(h.note)}</div>`:''}</div>`).join('')}</div></div></div></div>
+  <div class="card"><h3>${t('Parts used')}</h3>${!closed?`<div class="bar"><select id="rpp" class="grow">${opts(DB.Products.filter(p=>p.kind!=='Service'&&p.active!=='No').map(p=>[p.id,`${p.name} · ${p.sku} (${t('Stock')}: ${qfmt(p.stock)}) ${money(p.price)}`]),'')}</select><input id="rpq" type="number" value="1" style="width:80px;min-width:0"><button class="btn" onclick="addRepairPart('${r.id}')">+ ${t('Add part')}</button></div>`:''}
+   <table><tr><th>${t('Product')}</th><th class="n">${t('Qty')}</th><th class="n">${t('Price')}</th><th class="n">${t('Total')}</th><th></th></tr>${(r.parts||[]).map((p,i)=>`<tr><td>${esc(p.name)} <span class="mut">${esc(p.sku)}</span></td><td class="n">${qfmt(p.qty)}</td><td class="n">${!closed?`<input type="number" step="any" value="${p.price}" style="width:90px" onchange="setPartPrice('${r.id}',${i},this.value)">`:money(p.price)}</td><td class="n">${money(p.qty*p.price)}</td><td>${!closed?`<button class="btn ghost sm" onclick="removeRepairPart('${r.id}',${i})">✕</button>`:''}</td></tr>`).join('')}
+   <tr><td>${t('Labor')}</td><td></td><td></td><td class="n">${money(r.labor)}</td><td></td></tr><tr class="bold"><td>${t('Total')}</td><td></td><td></td><td class="n">${money(repairTotal(r))}</td><td></td></tr></table></div>`}};
+async function repairSave(id,fn){try{const tx=new Tx();const r=tx.get('Repairs',id);fn(r);r.total=repairTotal(r);tx.put('Repairs',r);await tx.commit();render()}catch(e){if(!e._shown)toast(e.message,'err')}}
+function setRepairStatus(id){const st=$('#rst').value,note=$('#rnote').value;repairSave(id,r=>{r.status=st;r.history=(r.history||[]).concat([{date:nowISO(),status:st,note,user:USER}])}).then(()=>toast(t('Status updated')))}
+function addRepairPart(id){const pid=$('#rpp').value,q=num($('#rpq').value);if(!pid||q<=0)return;const p=byId('Products',pid);repairSave(id,r=>{r.parts=(r.parts||[]).concat([{productId:pid,sku:p.sku,name:p.name,qty:q,price:num(p.price)}])})}
+function removeRepairPart(id,i){repairSave(id,r=>{r.parts.splice(i,1)})}
+function setPartPrice(id,i,v){repairSave(id,r=>{r.parts[i].price=num(v)})}
+function deliverRepair(id){const r=byId('Repairs',id);const sub=repairTotal(r);
+  openModal(t('Deliver & charge')+' · '+r.number,`<div class="grid2"><label><span>${t('Discount')}</span><input id="dd" type="number" step="any" value="0" oninput="dcalc()"></label><label><span>${t('Payment')}</span><select id="dp">${opts(PAYMENTS,'Cash')}</select></label><label><span>${t('Warranty days')}</span><input id="dw" type="number" value="${num(r.warrantyDays)}"></label></div><table class="tot" id="dtot" style="margin-top:12px"></table><div class="actions"><button class="btn ghost" onclick="closeModal()">${t('Cancel')}</button><button class="btn ok" id="dgo">${t('Deliver & charge')}</button></div>`);
+  window.dcalc=()=>{const d=num($('#dd').value),net=sub-d,tax=r2(net*S.taxRate/100);$('#dtot').innerHTML=`<tr><td>${t('Parts used')}</td><td class="n">${money(repairParts(r))}</td></tr><tr><td>${t('Labor')}</td><td class="n">${money(r.labor)}</td></tr><tr><td>${t('Discount')}</td><td class="n">-${money(d)}</td></tr><tr><td>${esc(S.taxLabel)} ${S.taxRate}%</td><td class="n">${money(tax)}</td></tr><tr><td>${t('Total')}</td><td class="n">${money(net+tax)}</td></tr><tr><td>${t('Deposit received')}</td><td class="n">-${money(r.deposit)}</td></tr><tr><td>${t('Balance due')}</td><td class="n">${money(net+tax-num(r.deposit))}</td></tr>`};dcalc();
+  $('#dgo').onclick=async()=>{try{const disc=r2($('#dd').value),pay=$('#dp').value,wd=num($('#dw').value);
+    const parts=(r.parts||[]).map(p=>Object.assign({},p,{kind:(byId('Products',p.productId)||{}).kind||'Part'}));checkStock(parts);
+    const tx=new Tx();const saleId=uid(),date=nowISO();const items=[];
+    parts.forEach(p=>{const c=tx.move(p.productId,{type:'REPAIR',qtyOut:p.qty,ref:'@@num:'+saleId,date,notes:r.number});items.push({productId:p.productId,sku:p.sku,name:p.name,kind:p.kind,qty:p.qty,price:p.price,cost:r4(c),serial:'',warrantyDays:0})});
+    if(num(r.labor)>0||!items.length)items.push({productId:'',sku:'',name:`${t('Labor')} · ${t(r.deviceType)} ${r.brand} ${r.model}`.trim(),kind:'Service',qty:1,price:num(r.labor),cost:0,serial:r.serial,warrantyDays:wd});
+    const subT=r2(sum(items,i=>i.qty*i.price)),net=r2(subT-disc),tax=r2(net*S.taxRate/100),cost=r2(sum(items,i=>i.qty*i.cost));
+    tx.ops.unshift({table:'Sales',action:'upsert',record:{id:saleId,number:'AUTO',date,customerId:r.customerId,items,subtotal:subT,discount:disc,tax,total:r2(net+tax),cost,profit:r2(net-cost),payment:pay,status:'Completed',repairId:r.id,notes:`${r.number}${num(r.deposit)?' · '+t('Deposit received')+' '+money(r.deposit):''}`,user:USER}});
+    const rr=tx.get('Repairs',id);let wid='';
+    if(wd>0){wid=uid();tx.put('Warranties',{id:wid,number:'AUTO',type:'Repair',refId:r.id,refNumber:r.number,customerId:r.customerId,description:`${t(r.deviceType)} ${r.brand} ${r.model} — ${r.problem}`.slice(0,200),serial:r.serial,startDate:today(),endDate:addDays(today(),wd),status:'Active',claims:[],notes:''})}
+    Object.assign(rr,{status:'Delivered',dateOut:date,saleId,warrantyId:wid,warrantyDays:wd,total:repairTotal(rr)});rr.history=(rr.history||[]).concat([{date,status:'Delivered',note:'',user:USER}]);
+    tx.put('Repairs',rr);await tx.commit();closeModal();toast(t('Repair delivered'));render();showReceipt(saleId);
+  }catch(e){if(!e._shown)toast(e.message,'err')}}}
+function workOrderHTML(r){const c=byId('Customers',r.customerId)||{};return `<div class="doc">${docHead(t('Work order'),r.number,r.dateIn)}
+  <div class="kv"><div>${t('Customer')}</div><div><b>${esc(c.name||t('Walk-in'))}</b> ${esc(c.phone||'')} ${esc(c.email||'')}</div><div>${t('Device')}</div><div>${esc(t(r.deviceType))} · ${esc(r.brand)} ${esc(r.model)}</div><div>${t('Serial / IMEI')}</div><div>${esc(r.serial)}</div><div>${t('Accessories received')}</div><div>${esc(r.accessories)}</div><div>${t('Condition')}</div><div>${esc(r.condition)}</div><div>${t('Problem reported')}</div><div>${esc(r.problem)}</div><div>${t('Diagnosis')}</div><div>${esc(r.diagnosis)}</div><div>${t('Technician')}</div><div>${esc(r.technician)}</div><div>${t('Promised date')}</div><div>${fdate(r.promisedDate)}</div><div>${t('Estimate')}</div><div>${money(r.estimate)}</div><div>${t('Deposit')}</div><div>${money(r.deposit)}</div><div>${t('Status')}</div><div>${esc(t(r.status))}</div></div>
+  <p class="mut" style="font-size:11px;margin-top:14px">${esc(S.repairTerms)}</p><div class="sig"><div>${t('Customer signature')}</div><div>${t('Store')}</div></div></div>`}
+
+/* =========================================================
+   WARRANTIES
+   ========================================================= */
+VIEWS.warranties={html(){return `<div class="card"><div class="bar"><input class="grow" placeholder="${t('Search')} (${t('Number')}, ${t('Serial / IMEI')}, ${t('Customer')})" value="${esc(F.wq||'')}" oninput="F.wq=this.value;$('#tbl').innerHTML=tblWarranties()"><select onchange="F.ws=this.value;$('#tbl').innerHTML=tblWarranties()">${opts([['',t('All')],['Active',t('Active')],['exp',t('Expiring (30 days)')],['Expired',t('Expired')],['Void',t('Void')]],F.ws||'')}</select></div><div id="tbl" class="tw">${tblWarranties()}</div></div>`}};
+function tblWarranties(rows){const td=today();if(!rows){const q=(F.wq||'').toLowerCase(),st=F.ws||'';rows=DB.Warranties.filter(w=>{const s=wStatus(w);return(!st||(st==='exp'?s==='Active'&&fdate(w.endDate)<=addDays(td,30):s===st))&&(!q||[w.number,w.refNumber,w.serial,w.description,custName(w.customerId)].join(' ').toLowerCase().includes(q))})}
+  rows=rows.slice().sort((a,b)=>String(a.endDate).localeCompare(b.endDate));if(!rows.length)return `<div class="empty">${t('Nothing here yet')}</div>`;
+  return `<table><tr><th>${t('Number')}</th><th>${t('Type')}</th><th>${t('Reference')}</th><th>${t('Customer')}</th><th>${t('Description')}</th><th>${t('Serial / IMEI')}</th><th>${t('Start')}</th><th>${t('End')}</th><th class="n">${t('Days left')}</th><th>${t('Claims')}</th><th>${t('Status')}</th></tr>${rows.map(w=>{const s=wStatus(w);const dl=daysBetween(td,w.endDate);return `<tr class="click" onclick="showWarranty('${w.id}')"><td>${esc(w.number)}</td><td>${esc(t(w.type))}</td><td>${esc(w.refNumber)}</td><td>${esc(custName(w.customerId))}</td><td>${esc(w.description)}</td><td>${esc(w.serial)}</td><td>${fdate(w.startDate)}</td><td>${fdate(w.endDate)}</td><td class="n" ${s==='Active'&&dl<=30?'style="color:var(--warn);font-weight:700"':''}>${s==='Active'?dl:'—'}</td><td class="n">${(w.claims||[]).length}</td><td>${badge(s)}</td></tr>`}).join('')}</table>`}
+function warrantyHTML(w){const c=byId('Customers',w.customerId)||{};return `<div class="doc">${docHead(t('Warranty certificate'),w.number,w.startDate)}<div class="kv"><div>${t('Customer')}</div><div><b>${esc(c.name||t('Walk-in'))}</b> ${esc(c.phone||'')}</div><div>${t('Type')}</div><div>${esc(t(w.type))} · ${esc(w.refNumber)}</div><div>${t('Description')}</div><div>${esc(w.description)}</div><div>${t('Serial / IMEI')}</div><div>${esc(w.serial)}</div><div>${t('Start')}</div><div>${fdate(w.startDate)}</div><div>${t('End')}</div><div><b>${fdate(w.endDate)}</b></div><div>${t('Status')}</div><div>${esc(t(wStatus(w)))}</div></div>
+  ${(w.claims||[]).length?`<h3>${t('Claims')}</h3><table><tr><th>${t('Date')}</th><th>${t('Issue')}</th><th>${t('Resolution')}</th></tr>${w.claims.map(c=>`<tr><td>${fdate(c.date)}</td><td>${esc(c.issue)}</td><td>${esc(c.resolution)}</td></tr>`).join('')}</table>`:''}<p class="mut" style="font-size:11px;margin-top:14px">${esc(S.warrantyTerms)}</p><div class="sig"><div>${t('Store')}</div></div></div>`}
+function showWarranty(id){const w=byId('Warranties',id);const act=wStatus(w)==='Active';
+  openModal(t('Warranty')+' '+w.number,warrantyHTML(w)+`<div class="actions">${w.type==='Repair'?`<button class="btn ghost" onclick="closeModal();go('repair','${w.refId}')">${t('Repair order')}</button>`:`<button class="btn ghost" onclick="showReceipt('${w.refId}')">${t('Invoice')}</button>`}${act?`<button class="btn warn" onclick="warrantyClaim('${w.id}')">${t('New claim')}</button>`:''}<button class="btn" onclick="printHTML(warrantyHTML(byId('Warranties','${w.id}')))">${t('Print certificate')}</button></div>`,true)}
+function warrantyClaim(id){const w=byId('Warranties',id);
+  formModal(t('New claim')+' · '+w.number,[{k:'issue',label:'Issue',type:'textarea',full:true,req:true},{k:'resolution',label:'Resolution',type:'textarea',full:true},{k:'action',label:'Actions',type:'select',opts:[['record',t('Record only')],['repair',t('Create warranty repair order')]],full:true}],{},async v=>{
+    const tx=new Tx();const ww=tx.get('Warranties',id);let roId='';
+    if(v.action==='repair'){roId=uid();const src=w.type==='Repair'?byId('Repairs',w.refId)||{}:{};tx.put('Repairs',{id:roId,number:'AUTO',dateIn:nowISO(),customerId:w.customerId,deviceType:src.deviceType||'Other',brand:src.brand||'',model:src.model||w.description,serial:w.serial,accessories:'',condition:'',problem:v.issue,diagnosis:'',technician:src.technician||techs()[0]||'',status:'Received',priority:'High',promisedDate:'',estimate:0,labor:0,parts:[],deposit:0,total:0,warrantyDays:0,warrantyId:'',dateOut:'',saleId:'',history:[{date:nowISO(),status:'Received',note:t('Warranty')+' '+w.number,user:USER}],notes:t('Warranty')+' '+w.number})}
+    ww.claims=(ww.claims||[]).concat([{date:nowISO(),issue:v.issue,resolution:v.resolution,repairId:roId,user:USER}]);tx.put('Warranties',ww);
+    await tx.commit();toast(t('Claim saved'));if(roId){VIEW='repair';ARG=roId}})}
+
+/* =========================================================
+   CUSTOMERS
+   ========================================================= */
+VIEWS.customers={html(){return `<div class="card"><div class="bar"><input class="grow" placeholder="${t('Search')}" value="${esc(F.cq||'')}" oninput="F.cq=this.value;$('#tbl').innerHTML=tblCustomers()"><button class="btn" onclick="editCustomer()">+ ${t('New customer')}</button></div><div id="tbl" class="tw">${tblCustomers()}</div></div>`}};
+function custStats(id){const s=DB.Sales.filter(x=>x.customerId===id&&x.status!=='Void');const r=DB.Repairs.filter(x=>x.customerId===id);const dates=s.map(x=>x.date).concat(r.map(x=>x.dateIn)).sort();return{sales:s,repairs:r,spent:sum(s,'total'),visits:s.length+r.filter(x=>!x.saleId).length,last:dates[dates.length-1]||''}}
+function tblCustomers(){const q=(F.cq||'').toLowerCase();const rows=DB.Customers.filter(c=>!q||[c.name,c.phone,c.email,c.address].join(' ').toLowerCase().includes(q)).sort((a,b)=>String(a.name).localeCompare(b.name));
+  if(!rows.length)return `<div class="empty">${t('Nothing here yet')}</div>`;return `<table><tr><th>${t('Name')}</th><th>${t('Phone')}</th><th>${t('Email')}</th><th class="n">${t('Visits')}</th><th class="n">${t('Total spent')}</th><th>${t('Last visit')}</th></tr>${rows.map(c=>{const st=custStats(c.id);return `<tr class="click" onclick="go('customer','${c.id}')"><td>${esc(c.name)}</td><td>${esc(c.phone)}</td><td>${esc(c.email)}</td><td class="n">${st.visits}</td><td class="n">${money(st.spent)}</td><td>${fdate(st.last)}</td></tr>`}).join('')}</table>`}
+function editCustomer(id,cb){const c=id?byId('Customers',id):{};formModal(id?t('Edit'):t('New customer'),[{k:'name',label:'Name',req:true},{k:'phone',label:'Phone'},{k:'email',label:'Email',type:'email'},{k:'address',label:'Address'},{k:'notes',label:'Notes',type:'textarea',full:true}],c,async v=>{
+  const rec=await saveOne('Customers',Object.assign({},c,v,{id:c.id||uid(),createdAt:c.createdAt||nowISO()}));toast(t('Saved'));if(cb)cb(rec)})}
+VIEWS.customer={html(){const c=byId('Customers',ARG);if(!c)return '';const st=custStats(c.id);const ws=DB.Warranties.filter(w=>w.customerId===c.id);
+  return `<div class="bar"><button class="btn ghost" onclick="go('customers')">← ${t('Back')}</button><span class="grow"></span><button class="btn ghost" onclick="deleteCustomer('${c.id}')">${t('Delete')}</button><button class="btn ghost" onclick="editCustomer('${c.id}')">${t('Edit')}</button><button class="btn" onclick="CART=null;newCart();CART.customerId='${c.id}';go('pos')">+ ${t('Sale')}</button><button class="btn" onclick="editRepair();setTimeout(()=>{const s=document.querySelector('#mf [name=customerId]');if(s)s.value='${c.id}'},0)">+ ${t('Repair')}</button></div>
+  <div class="kpis"><div class="kpi"><div class="l">${t('Name')}</div><div class="v" style="font-size:18px">${esc(c.name)}</div><div class="mut">${esc(c.phone)} ${esc(c.email)}</div><div class="mut">${esc(c.address)}</div></div><div class="kpi ok"><div class="l">${t('Total spent')}</div><div class="v">${money(st.spent)}</div></div><div class="kpi"><div class="l">${t('Visits')}</div><div class="v">${st.visits}</div></div><div class="kpi"><div class="l">${t('Last visit')}</div><div class="v" style="font-size:18px">${fdate(st.last)||'—'}</div></div></div>
+  ${c.notes?`<div class="card"><b>${t('Customer notes')}:</b> ${esc(c.notes)}</div>`:''}
+  <div class="card"><h3>${t('Repairs')}</h3><div class="tw">${tblRepairs(st.repairs)}</div></div><div class="card"><h3>${t('Sales')}</h3><div class="tw">${tblSalesMini(DB.Sales.filter(s=>s.customerId===c.id).sort((a,b)=>String(b.date).localeCompare(a.date)))}</div></div><div class="card"><h3>${t('Warranties')}</h3><div class="tw">${tblWarranties(ws)}</div></div>`}};
+function deleteCustomer(id){const has=DB.Sales.some(s=>s.customerId===id)||DB.Repairs.some(r=>r.customerId===id);if(has)return toast(t('Cannot delete: has history. Mark it inactive instead.'),'err');
+  confirmBox(t('Delete')+'? '+t('Are you sure?'),async()=>{const tx=new Tx();tx.del('Customers',id);await tx.commit();toast(t('Deleted'));go('customers')})}
+
+/* =========================================================
+   INVENTORY
+   ========================================================= */
+VIEWS.inventory={html(){return `<div class="card"><div class="bar"><input class="grow" placeholder="${t('Search by name, SKU, brand, model…')}" value="${esc(F.iq||'')}" oninput="F.iq=this.value;$('#tbl').innerHTML=tblInventory()"><select onchange="F.ic=this.value;$('#tbl').innerHTML=tblInventory()">${opts([['',t('All')]].concat(CATEGORIES),F.ic||'')}</select><label><input type="checkbox" style="width:auto" ${F.low?'checked':''} onchange="F.low=this.checked;$('#tbl').innerHTML=tblInventory()"> ${t('Only low stock')}</label><button class="btn" onclick="editProduct()">+ ${t('New product')}</button></div><div id="tbl" class="tw">${tblInventory()}</div></div>`}};
+function tblInventory(){const q=(F.iq||'').toLowerCase();const rows=DB.Products.filter(p=>(!F.ic||p.category===F.ic)&&(!F.low||(p.kind!=='Service'&&num(p.stock)<=num(p.minStock)))&&(!q||[p.name,p.sku,p.brand,p.model].join(' ').toLowerCase().includes(q))).sort((a,b)=>String(a.name).localeCompare(b.name));
+  if(!rows.length)return `<div class="empty">${t('Nothing here yet')}</div>`;const val=sum(rows.filter(p=>p.kind!=='Service'),p=>Math.max(0,p.stock)*p.avgCost);
+  return `<table><tr><th>${t('SKU')}</th><th>${t('Name')}</th><th>${t('Kind')}</th><th>${t('Category')}</th><th class="n">${t('Stock')}</th><th class="n">${t('Min stock')}</th><th class="n">${t('Avg cost')}</th><th class="n">${t('Price')}</th><th class="n">${t('Margin')}</th><th class="n">${t('Value')}</th><th>${t('Actions')}</th></tr>${rows.map(p=>{const low=p.kind!=='Service'&&num(p.stock)<=num(p.minStock);const mg=p.price?((p.price-p.avgCost)/p.price*100):0;return `<tr style="${p.active==='No'?'opacity:.5':''}"><td>${esc(p.sku)}</td><td><b>${esc(p.name)}</b><div class="mut">${esc([p.brand,p.model].filter(Boolean).join(' '))}</div></td><td>${esc(t(p.kind))}</td><td>${esc(t(p.category))}</td><td class="n" ${low?'style="color:var(--bad);font-weight:700"':''}>${p.kind==='Service'?'—':qfmt(p.stock)}</td><td class="n">${p.kind==='Service'?'—':qfmt(p.minStock)}</td><td class="n">${money(p.avgCost)}</td><td class="n">${money(p.price)}</td><td class="n">${mg.toFixed(1)}%</td><td class="n">${p.kind==='Service'?'—':money(Math.max(0,p.stock)*p.avgCost)}</td><td style="white-space:nowrap"><button class="btn ghost sm" onclick="editProduct('${p.id}')">${t('Edit')}</button> ${p.kind!=='Service'?`<button class="btn ghost sm" onclick="adjustStock('${p.id}')">±</button> <button class="btn ghost sm" onclick="F.kp='${p.id}';go('kardex')">${t('Kardex')}</button>`:''}</td></tr>`}).join('')}<tr class="bold"><td colspan="9">${rows.length} ${t('Items')}</td><td class="n">${money(val)}</td><td></td></tr></table>`}
+function editProduct(id){const p=id?byId('Products',id):{kind:'Product',category:'Accessories',active:'Yes',warrantyDays:0,minStock:1};
+  const f=[{k:'sku',label:'SKU',req:true},{k:'name',label:'Name',req:true},{k:'kind',label:'Kind',type:'select',opts:KINDS},{k:'category',label:'Category',type:'select',opts:CATEGORIES},{k:'brand',label:'Brand'},{k:'model',label:'Model'},{k:'price',label:'Price',type:'number'},{k:'minStock',label:'Min stock',type:'number'},{k:'warrantyDays',label:'Warranty days',type:'number'},{k:'location',label:'Location'},{k:'active',label:'Active',type:'select',opts:['Yes','No']}];
+  if(!id)f.push({k:'_qty',label:'Initial stock',type:'number'},{k:'_cost',label:'Initial unit cost',type:'number'});
+  formModal(id?t('Edit')+' '+p.name:t('New product'),f,p,async v=>{
+    if(DB.Products.some(x=>x.sku.toLowerCase()===v.sku.toLowerCase()&&x.id!==id))fail('SKU '+v.sku+' already exists');
+    const tx=new Tx();const qty=v._qty,cost=v._cost;delete v._qty;delete v._cost;
+    if(id){const rec=Object.assign(tx.get('Products',id),v);tx.put('Products',rec)}
+    else{const nid=uid();const rec=Object.assign({id:nid,avgCost:r4(cost),stock:0,createdAt:nowISO()},v);DB.Products.push(rec);tx.cache['Products:'+nid]=Object.assign({},rec);tx.put('Products',tx.cache['Products:'+nid]);
+      if(qty>0&&rec.kind!=='Service'){tx.cache['Products:'+nid].avgCost=0;tx.move(nid,{type:'OPEN',qtyIn:qty,unitCost:cost,ref:'OPEN'})}
+      try{await tx.commit()}catch(e){DB.Products=DB.Products.filter(x=>x.id!==nid);throw e}toast(t('Saved'));return}
+    await tx.commit();toast(t('Saved'))},true)}
+function adjustStock(id){const p=byId('Products',id);
+  formModal(t('Adjust stock')+' · '+p.name+` (${t('Stock')}: ${qfmt(p.stock)})`,[{k:'mode',label:'Type',type:'select',opts:[['in',t('Adjustment in')],['out',t('Adjustment out')],['count',t('Physical count')]]},{k:'qty',label:'Quantity',type:'number',req:true},{k:'unitCost',label:'Unit cost',type:'number',def:p.avgCost},{k:'notes',label:'Notes',full:true}],{},async v=>{
+    const tx=new Tx();let q=v.qty,mode=v.mode;if(mode==='count'){const d=r4(v.qty-num(p.stock));if(!d)return;q=Math.abs(d);mode=d>0?'in':'out'}
+    if(q<=0)fail(t('Quantity'));
+    tx.move(id,mode==='in'?{type:v.mode==='count'?'COUNT+':'ADJ+',qtyIn:q,unitCost:v.unitCost||p.avgCost,notes:v.notes,ref:'ADJ'}:{type:v.mode==='count'?'COUNT-':'ADJ-',qtyOut:q,notes:v.notes,ref:'ADJ'});
+    await tx.commit();toast(t('Saved'))})}
+
+/* =========================================================
+   KARDEX (per item stock card, weighted average cost)
+   ========================================================= */
+const KTYPES={OPEN:'Opening',PURCHASE:'Purchase',SALE:'Sale',REPAIR:'Repair',VOID:'Sale void','ADJ+':'Adjustment in','ADJ-':'Adjustment out','COUNT+':'Physical count','COUNT-':'Physical count'};
+VIEWS.kardex={html(){const prods=DB.Products.filter(p=>p.kind!=='Service').sort((a,b)=>String(a.name).localeCompare(b.name));
+  return `<div class="card"><div class="bar"><select class="grow" onchange="F.kp=this.value;render()">${opts([['',t('All movements')]].concat(prods.map(p=>[p.id,p.sku+' · '+p.name])),F.kp||'')}</select><button class="btn ghost" onclick="printHTML(kardexHTML())">${t('Print')}</button><button class="btn ghost" onclick="download('kardex.csv',toCSV(kardexRows()),'text/csv')">${t('Export CSV')}</button></div><div class="tw">${kardexHTML(true)}</div></div>`}};
+function kardexRows(){return DB.Kardex.filter(k=>!F.kp||k.productId===F.kp).sort((a,b)=>String(a.date).localeCompare(b.date))}
+function kardexHTML(screen){const p=F.kp&&byId('Products',F.kp);let rows=kardexRows();if(!p&&screen)rows=rows.slice(-300);
+  const head=p?`<div class="kpis" style="margin-top:4px"><div class="kpi"><div class="l">${t('Product')}</div><div class="v" style="font-size:16px">${esc(p.sku)} · ${esc(p.name)}</div></div><div class="kpi"><div class="l">${t('Stock')}</div><div class="v">${qfmt(p.stock)}</div></div><div class="kpi"><div class="l">${t('Avg cost')}</div><div class="v">${money(p.avgCost)}</div></div><div class="kpi"><div class="l">${t('Value')}</div><div class="v">${money(p.stock*p.avgCost)}</div></div></div>`:'';
+  const body=rows.length?`<table><tr><th>${t('Date')}</th>${p?'':`<th>${t('Product')}</th>`}<th>${t('Movement')}</th><th>${t('Reference')}</th><th class="n">${t('In')}</th><th class="n">${t('Out')}</th><th class="n">${t('Unit cost')}</th><th class="n">${t('Balance qty')}</th><th class="n">${t('Avg cost')}</th><th class="n">${t('Balance value')}</th><th>${t('Notes')}</th></tr>${rows.map(k=>`<tr><td>${fdt(k.date)}</td>${p?'':`<td>${esc(k.sku)} ${esc((byId('Products',k.productId)||{}).name||'')}</td>`}<td>${esc(t(KTYPES[k.type]||k.type))}</td><td>${esc(k.ref)}</td><td class="n">${k.qtyIn?qfmt(k.qtyIn):''}</td><td class="n">${k.qtyOut?qfmt(k.qtyOut):''}</td><td class="n">${money(k.unitCost)}</td><td class="n bold">${qfmt(k.balanceQty)}</td><td class="n">${money(k.balanceAvgCost)}</td><td class="n">${money(k.balanceValue)}</td><td>${esc(k.notes)}</td></tr>`).join('')}${p?`<tr class="bold"><td colspan="3">${t('Total')}</td><td class="n">${qfmt(sum(rows,'qtyIn'))}</td><td class="n">${qfmt(sum(rows,'qtyOut'))}</td><td colspan="5"></td></tr>`:''}</table>`:`<div class="empty">${t('Nothing here yet')}</div>`;
+  return screen?head+body:`<div class="doc" style="max-width:none">${docHead(t('Kardex'),p?p.sku+' '+p.name:t('All movements'),nowISO())}${head}${body}</div>`}
+
+/* =========================================================
+   PURCHASES & SUPPLIERS
+   ========================================================= */
+const suppName=id=>(byId('Suppliers',id)||{}).name||'';
+VIEWS.purchases={html(){const rows=DB.Purchases.slice().sort((a,b)=>String(b.date).localeCompare(a.date));
+  return `<div class="card"><div class="bar"><span class="grow"></span><button class="btn" onclick="newPurchase()">+ ${t('New purchase')}</button></div><div class="tw">${rows.length?`<table><tr><th>${t('Number')}</th><th>${t('Date')}</th><th>${t('Supplier')}</th><th>${t('Supplier invoice #')}</th><th>${t('Items')}</th><th class="n">${t('Total')}</th></tr>${rows.map(p=>`<tr><td>${esc(p.number)}</td><td>${fdate(p.date)}</td><td>${esc(suppName(p.supplierId))}</td><td>${esc(p.invoiceRef)}</td><td>${esc((p.items||[]).map(i=>qfmt(i.qty)+' × '+i.name).join(', '))}</td><td class="n">${money(p.total)}</td></tr>`).join('')}</table>`:`<div class="empty">${t('Nothing here yet')}</div>`}</div></div>`}};
+let PL=[];
+function newPurchase(){PL=[{productId:'',qty:1,unitCost:0}];openModal(t('New purchase'),`<div class="grid2"><label><span>${t('Supplier')}</span><select id="pus">${opts([['','—']].concat(DB.Suppliers.map(s=>[s.id,s.name])),'')}</select></label><label><span>${t('Supplier invoice #')}</span><input id="pui"></label><label><span>${t('Date')}</span><input id="pud" type="date" value="${today()}"></label><label><span>${t('Notes')}</span><input id="pun"></label></div><div id="pul" style="margin-top:12px"></div><div class="actions"><button class="btn ghost" onclick="closeModal()">${t('Cancel')}</button><button class="btn ok" onclick="savePurchase()">${t('Save')}</button></div>`,true);renderPL()}
+function renderPL(){const prods=DB.Products.filter(p=>p.kind!=='Service').sort((a,b)=>String(a.name).localeCompare(b.name)).map(p=>[p.id,p.sku+' · '+p.name]);
+  $('#pul').innerHTML=`<table><tr><th>${t('Product')}</th><th class="n">${t('Qty')}</th><th class="n">${t('Unit cost')}</th><th class="n">${t('Total')}</th><th></th></tr>${PL.map((l,i)=>`<tr><td><select onchange="PL[${i}].productId=this.value;const p=byId('Products',this.value);if(p&&!PL[${i}].unitCost){PL[${i}].unitCost=p.avgCost};renderPL()">${opts([['','—']].concat(prods),l.productId)}</select></td><td class="n"><input type="number" step="any" style="width:80px" value="${l.qty}" onchange="PL[${i}].qty=num(this.value);renderPL()"></td><td class="n"><input type="number" step="any" style="width:100px" value="${l.unitCost}" onchange="PL[${i}].unitCost=num(this.value);renderPL()"></td><td class="n">${money(l.qty*l.unitCost)}</td><td><button class="btn ghost sm" onclick="PL.splice(${i},1);renderPL()">✕</button></td></tr>`).join('')}<tr class="bold"><td><button class="btn ghost sm" onclick="PL.push({productId:'',qty:1,unitCost:0});renderPL()">+ ${t('Add line')}</button></td><td></td><td>${t('Total')}</td><td class="n">${money(sum(PL,l=>l.qty*l.unitCost))}</td><td></td></tr></table>`}
+async function savePurchase(){try{const lines=PL.filter(l=>l.productId&&l.qty>0);if(!lines.length)fail(t('Cart is empty'));const tx=new Tx();const id=uid();const d=$('#pud').value||today();const date=d===today()?nowISO():d+'T12:00:00';
+  const items=lines.map(l=>{const p=byId('Products',l.productId);tx.move(l.productId,{type:'PURCHASE',qtyIn:l.qty,unitCost:l.unitCost,ref:'@@num:'+id,date,notes:$('#pui').value});return{productId:l.productId,sku:p.sku,name:p.name,qty:l.qty,unitCost:l.unitCost}});
+  tx.ops.unshift({table:'Purchases',action:'upsert',record:{id,number:'AUTO',date,supplierId:$('#pus').value,invoiceRef:$('#pui').value,items,total:r2(sum(items,i=>i.qty*i.unitCost)),notes:$('#pun').value,user:USER}});
+  await tx.commit();closeModal();toast(t('Purchase saved'));render()}catch(e){if(!e._shown)toast(e.message,'err')}}
+VIEWS.suppliers={html(){const rows=DB.Suppliers.slice().sort((a,b)=>String(a.name).localeCompare(b.name));return `<div class="card"><div class="bar"><span class="grow"></span><button class="btn" onclick="editSupplier()">+ ${t('New supplier')}</button></div><div class="tw">${rows.length?`<table><tr><th>${t('Name')}</th><th>${t('Contact')}</th><th>${t('Phone')}</th><th>${t('Email')}</th><th>${t('Notes')}</th><th class="n">${t('Purchases')}</th><th></th></tr>${rows.map(s=>`<tr><td>${esc(s.name)}</td><td>${esc(s.contact)}</td><td>${esc(s.phone)}</td><td>${esc(s.email)}</td><td>${esc(s.notes)}</td><td class="n">${money(sum(DB.Purchases.filter(p=>p.supplierId===s.id),'total'))}</td><td><button class="btn ghost sm" onclick="editSupplier('${s.id}')">${t('Edit')}</button></td></tr>`).join('')}</table>`:`<div class="empty">${t('Nothing here yet')}</div>`}</div></div>`}};
+function editSupplier(id){const s=id?byId('Suppliers',id):{};formModal(id?t('Edit'):t('New supplier'),[{k:'name',label:'Name',req:true},{k:'contact',label:'Contact'},{k:'phone',label:'Phone'},{k:'email',label:'Email'},{k:'notes',label:'Notes',type:'textarea',full:true}],s,async v=>{await saveOne('Suppliers',Object.assign({},s,v,{id:s.id||uid(),createdAt:s.createdAt||nowISO()}));toast(t('Saved'))})}
+
+/* =========================================================
+   EXPENSES (operating costs)
+   ========================================================= */
+VIEWS.expenses={html(){F.ef=F.ef||today().slice(0,8)+'01';F.et=F.et||today();const rows=DB.Expenses.filter(e=>fdate(e.date)>=F.ef&&fdate(e.date)<=F.et).sort((a,b)=>String(b.date).localeCompare(a.date));
+  return `<div class="card"><div class="bar"><label>${t('From')} <input type="date" value="${F.ef}" onchange="F.ef=this.value;render()"></label><label>${t('To')} <input type="date" value="${F.et}" onchange="F.et=this.value;render()"></label><span class="grow"></span><button class="btn" onclick="editExpense()">+ ${t('New expense')}</button></div><div class="tw">${rows.length?`<table><tr><th>${t('Date')}</th><th>${t('Category')}</th><th>${t('Description')}</th><th>${t('Supplier')}</th><th>${t('Payment')}</th><th class="n">${t('Amount')}</th><th></th></tr>${rows.map(e=>`<tr><td>${fdate(e.date)}</td><td>${esc(t(e.category))}</td><td>${esc(e.description)}</td><td>${esc(suppName(e.supplierId))}</td><td>${esc(t(e.payment))}</td><td class="n">${money(e.amount)}</td><td style="white-space:nowrap"><button class="btn ghost sm" onclick="editExpense('${e.id}')">${t('Edit')}</button> <button class="btn ghost sm" onclick="delExpense('${e.id}')">✕</button></td></tr>`).join('')}<tr class="bold"><td colspan="5">${t('Total')}</td><td class="n">${money(sum(rows,'amount'))}</td><td></td></tr></table>`:`<div class="empty">${t('Nothing here yet')}</div>`}</div></div>`}};
+function editExpense(id){const e=id?byId('Expenses',id):{date:today(),category:'Rent',payment:'Debit'};formModal(id?t('Edit'):t('New expense'),[{k:'date',label:'Date',type:'date',req:true},{k:'category',label:'Category',type:'select',opts:EXP_CATS},{k:'description',label:'Description',req:true,full:true},{k:'amount',label:'Amount',type:'number',req:true},{k:'payment',label:'Payment',type:'select',opts:PAYMENTS},{k:'supplierId',label:'Supplier',type:'select',opts:[['','—']].concat(DB.Suppliers.map(s=>[s.id,s.name]))},{k:'notes',label:'Notes'}],Object.assign({},e,{date:fdate(e.date)}),async v=>{await saveOne('Expenses',Object.assign({},e,v,{id:e.id||uid(),user:USER}));toast(t('Saved'))})}
+function delExpense(id){confirmBox(t('Delete')+'? '+t('Are you sure?'),async()=>{const tx=new Tx();tx.del('Expenses',id);await tx.commit();toast(t('Deleted'));render()})}
+
+/* =========================================================
+   REPORTS
+   ========================================================= */
+VIEWS.reports={html(){F.pf=F.pf||today().slice(0,8)+'01';F.pt=F.pt||today();const inR=d=>fdate(d)>=F.pf&&fdate(d)<=F.pt;
+  const sales=DB.Sales.filter(s=>s.status!=='Void'&&inR(s.date));const rep=sales.filter(s=>s.repairId),prod=sales.filter(s=>!s.repairId);
+  const net=sum(sales,netOf),cogs=sum(sales,'cost'),gp=net-cogs,exps=DB.Expenses.filter(e=>inR(e.date)),ex=sum(exps,'amount');
+  const grp=(arr,key,val)=>{const m={};arr.forEach(x=>{const k=key(x);m[k]=(m[k]||0)+num(val(x))});return Object.entries(m).sort((a,b)=>b[1]-a[1])};
+  const items=[];sales.forEach(s=>{const f=num(s.subtotal)?netOf(s)/num(s.subtotal):1;(s.items||[]).forEach(i=>items.push(Object.assign({},i,{rev:i.qty*i.price*f})))});
+  const topP={};items.forEach(i=>{const k=i.productId||i.name;topP[k]=topP[k]||{name:i.name,qty:0,rev:0,cost:0};topP[k].qty+=num(i.qty);topP[k].rev+=i.rev;topP[k].cost+=i.qty*i.cost});
+  const tp=Object.values(topP).sort((a,b)=>b.rev-a.rev).slice(0,10);
+  const repIn=DB.Repairs.filter(r=>inR(r.dateIn)),repOut=DB.Repairs.filter(r=>r.status==='Delivered'&&inR(r.dateOut));
+  const tat=repOut.length?sum(repOut,r=>daysBetween(r.dateIn,r.dateOut))/repOut.length:0;
+  const tech={};repOut.forEach(r=>{const k=r.technician||'—';tech[k]=tech[k]||{n:0,labor:0};tech[k].n++;tech[k].labor+=num(r.labor)});
+  const row=(l,v,b)=>`<tr ${b?'class="bold"':''}><td>${t(l)}</td><td class="n">${v}</td></tr>`;
+  const simple=(title,arr,fmt)=>`<div class="card"><h3>${t(title)}</h3>${arr.length?`<table>${arr.map(([k,v])=>`<tr><td>${esc(t(k))}</td><td class="n">${fmt?fmt(v):money(v)}</td></tr>`).join('')}</table>`:`<div class="empty">—</div>`}</div>`;
+  return `<div class="card"><div class="bar"><label>${t('From')} <input type="date" value="${F.pf}" onchange="F.pf=this.value;render()"></label><label>${t('To')} <input type="date" value="${F.pt}" onchange="F.pt=this.value;render()"></label><span class="grow"></span><button class="btn ghost" onclick="printHTML('<div class=doc style=max-width:none>'+docHead(t('Reports'),F.pf+' → '+F.pt,nowISO())+document.querySelector('#rep').innerHTML+'</div>')">${t('Print')}</button></div>
+   <div class="bar">${t('Export CSV')}: ${['Sales','Repairs','Customers','Products','Kardex','Warranties','Expenses','Purchases'].map(x=>`<button class="btn ghost sm" onclick="download('${x}.csv',toCSV(DB.${x}),'text/csv')">${t(x==='Products'?'Inventory':x)}</button>`).join('')}</div></div>
+  <div id="rep"><div class="grid3"><div class="card"><h3>${t('Income statement')}</h3><table>${row('Product sales',money(sum(prod,netOf)))}${row('Repair services',money(sum(rep,netOf)))}${row('Net sales',money(net),1)}${row('Cost of goods sold','-'+money(cogs))}${row('Gross profit',money(gp),1)}${row('Gross margin',(net?gp/net*100:0).toFixed(1)+'%')}${row('Operating expenses','-'+money(ex))}${row('Net profit',money(gp-ex),1)}${row('Tax collected',money(sum(sales,'tax')))}${row('Transactions',sales.length)}</table></div>
+   ${simple('By payment method',grp(sales,s=>s.payment,s=>s.total))}${simple('Expenses by category',grp(exps,e=>e.category,e=>e.amount))}</div>
+   <div class="grid2"><div class="card"><h3>${t('Top products')}</h3>${tp.length?`<table><tr><th>${t('Product')}</th><th class="n">${t('Qty sold')}</th><th class="n">${t('Revenue')}</th><th class="n">${t('Profit')}</th></tr>${tp.map(p=>`<tr><td>${esc(p.name)}</td><td class="n">${qfmt(p.qty)}</td><td class="n">${money(p.rev)}</td><td class="n">${money(p.rev-p.cost)}</td></tr>`).join('')}</table>`:'<div class="empty">—</div>'}</div>
+   ${simple('Top customers',grp(sales.filter(s=>s.customerId),s=>custName(s.customerId),s=>s.total).slice(0,10))}</div>
+   <div class="grid3"><div class="card"><h3>${t('Repairs summary')}</h3><table>${row('Received',repIn.length)}${row('Delivered',repOut.length)}${row('Avg turnaround (days)',tat.toFixed(1))}${row('Open repairs',DB.Repairs.filter(r=>!['Delivered','Cancelled'].includes(r.status)).length)}</table></div>
+   ${simple('Device type',grp(repIn,r=>r.deviceType,()=>1),v=>v)}<div class="card"><h3>${t('By technician')}</h3>${Object.keys(tech).length?`<table><tr><th>${t('Technician')}</th><th class="n">${t('Delivered')}</th><th class="n">${t('Labor')}</th></tr>${Object.entries(tech).map(([k,v])=>`<tr><td>${esc(k)}</td><td class="n">${v.n}</td><td class="n">${money(v.labor)}</td></tr>`).join('')}</table>`:'<div class="empty">—</div>'}</div></div></div>`}};
+
+/* =========================================================
+   SETTINGS
+   ========================================================= */
+VIEWS.settings={html(){const f=[['storeName','Store name'],['address','Address'],['phone','Phone'],['email','Email'],['taxLabel','Tax label'],['taxRate','Tax rate %','number'],['currency','Currency'],['repairWarrantyDays','Default repair warranty (days)','number'],['technicians','Technicians (comma separated)'],['allowNegativeStock','Allow negative stock','yn'],['receiptFooter','Receipt footer'],['warrantyTerms','Warranty terms','ta'],['repairTerms','Repair terms','ta']];
+  return `<div class="card"><form id="sf" class="grid2">${f.map(([k,l,ty])=>`<label class="${ty==='ta'?'full':''}"><span>${t(l)}</span>${ty==='ta'?`<textarea name="${k}" rows="3">${esc(S[k])}</textarea>`:ty==='yn'?`<select name="${k}">${opts(['No','Yes'],S[k])}</select>`:`<input name="${k}" ${ty==='number'?'type="number" step="any"':''} value="${esc(S[k])}">`}</label>`).join('')}<label><span>${t('Language')}</span><select onchange="setLang(this.value)">${opts([['en','English'],['es','Español']],LANG)}</select></label><div class="full actions"><button class="btn">${t('Save')}</button></div></form></div>
+  <div class="card"><h3>${t('Backup')}</h3><p class="mut">${t('Data is stored in')}: <b>${IS_GAS?t('Google Sheets'):t('Local (this browser)')}</b></p><div class="bar"><button class="btn ghost" onclick="download('store-backup-'+today()+'.json',JSON.stringify(DB,null,1),'application/json')">${t('Export backup (JSON)')}</button><label class="btn ghost">${t('Import backup (JSON)')}<input type="file" accept=".json" class="hidden" onchange="importBackup(this.files[0])"></label>${!DB.Products.length&&!DB.Sales.length?`<button class="btn warn" onclick="loadDemo()">${t('Load demo data')}</button>`:''}</div></div>`},
+  after(){$('#sf').onsubmit=async e=>{e.preventDefault();const fd=new FormData(e.target);const tx=new Tx();for(const [k,v] of fd.entries())tx.put('Settings',{id:k,value:v});try{await tx.commit();loadSettings();toast(t('Settings saved'));render()}catch(err){}}}};
+function importBackup(file){if(!file)return;if(IS_GAS)return toast(t('Import is only available in local mode. In Google Sheets mode paste data into the tabs.'),'err');
+  const rd=new FileReader();rd.onload=()=>{try{const d=JSON.parse(rd.result);TABLES.forEach(x=>{if(!Array.isArray(d[x]))d[x]=[]});LocalDB.save(d);toast(t('Import finished'));loadAll()}catch(e){toast(e.message,'err')}};rd.readAsText(file)}
+async function loadDemo(){const tx=new Tx();const c1=uid(),c2=uid(),s1=uid();
+  tx.put('Customers',{id:c1,name:'Maria Lopez',phone:'780-555-0101',email:'maria@example.com',address:'Edmonton, AB',notes:'',createdAt:nowISO()});
+  tx.put('Customers',{id:c2,name:'John Smith',phone:'780-555-0144',email:'john@example.com',address:'',notes:'Prefers text messages',createdAt:nowISO()});
+  tx.put('Suppliers',{id:s1,name:'Parts Wholesale Inc.',contact:'Sales desk',phone:'',email:'',notes:'',createdAt:nowISO()});
+  const P=[['SCR-IP13','iPhone 13 Screen (OLED)','Part','Parts','Apple','iPhone 13',189,95,6,2,90],['BAT-IP12','iPhone 12 Battery','Part','Parts','Apple','iPhone 12',99,32,8,3,90],['CHG-USBC20','USB-C 20W Charger','Product','Chargers & Cables','Generic','20W',29.99,9,25,5,30],['CBL-L2C','Lightning to USB-C Cable 1m','Product','Chargers & Cables','Generic','1m',19.99,4,40,10,30],['SSD-1TB','SSD 1TB SATA','Part','Storage','Samsung','870 EVO',129,82,5,2,365],['CASE-S23','Galaxy S23 Case','Product','Accessories','Generic','S23',24.99,6,3,5,0],['SRV-DIAG','Diagnostic fee','Service','Services','','',49,0,0,0,0],['SRV-OS','OS reinstall + data backup','Service','Services','','',119,0,0,0,30]];
+  P.forEach(a=>{const id=uid();const rec={id,sku:a[0],name:a[1],kind:a[2],category:a[3],brand:a[4],model:a[5],price:a[6],avgCost:0,stock:0,minStock:a[9],warrantyDays:a[10],location:'A1',active:'Yes',createdAt:nowISO()};DB.Products.push(rec);tx.cache['Products:'+id]=Object.assign({},rec);tx.put('Products',tx.cache['Products:'+id]);if(a[2]!=='Service')tx.move(id,{type:'OPEN',qtyIn:a[8],unitCost:a[7],ref:'OPEN'})});
+  tx.put('Repairs',{id:uid(),number:'AUTO',dateIn:nowISO(),customerId:c1,deviceType:'Phone',brand:'Apple',model:'iPhone 13',serial:'IMEI 356789012345678',accessories:'Case',condition:'Cracked screen',problem:'Screen cracked, touch not working',diagnosis:'',technician:techs()[0]||'',status:'Received',priority:'Normal',promisedDate:addDays(today(),2),estimate:189,labor:40,parts:[],deposit:50,total:40,warrantyDays:S.repairWarrantyDays,warrantyId:'',dateOut:'',saleId:'',history:[{date:nowISO(),status:'Received',note:'',user:USER}],notes:''});
+  tx.put('Expenses',{id:uid(),date:today(),category:'Rent',description:'Monthly rent',amount:1500,payment:'E-Transfer',supplierId:'',notes:'',user:USER});
+  try{await tx.commit();toast(t('Saved'));render()}catch(e){await loadAll()}}
+
+/* =========================================================
+   START
+   ========================================================= */
+loadAll();
+</script>
+</body>
+</html>
