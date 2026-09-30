@@ -24,7 +24,7 @@ Sales, repair and inventory manager for an electronics store (phones, iPads, tab
 1. Open the Google Sheet **AIBuildApp Store – Database** in your Drive folder **AIBuildApp Store**.
 2. In the Sheet, go to **Extensions → Apps Script**.
 3. The editor opens a file called `Code.gs`. Delete everything in it, then paste the full contents of **Code.gs** from the folder.
-4. Click **+ (Add a file) → HTML** and name it exactly `Index`. The editor adds `.html` for you. Delete its default content and paste the full contents of **Index.html**.
+4. Click **+ (Add a file) → HTML** and name it exactly `Index`. The editor adds `.html` for you. Delete its default content and paste the full contents of **index.html**.
 5. Click **Save** (disk icon).
 6. In the function dropdown at the top, choose **setup** and click **Run**. Approve the permissions when asked (*Advanced → Go to project → Allow*). This creates all the tabs: Customers, Products, Kardex, Sales, Repairs, Warranties and the rest.
 7. Click **Deploy → New deployment**, then the gear icon → **Web app**:
@@ -63,6 +63,45 @@ Setup:
 - **Documents:** invoices, work orders and warranty certificates print with their number as a barcode. Scan the paper to open the record.
 - **Internet:** the camera reader and label printer load small open-source libraries (ZXing, JsBarcode) from the internet the first time they are used.
 
+## Run the app from GitHub Pages
+
+You can open the app from GitHub instead of the Google link, for example:
+
+`https://ebasso2021.github.io/aibuildapp-store/`
+
+- **Where data is kept:** the page on GitHub is only the screens. Your data still lives in the Google Sheet. The page talks to your Apps Script over the internet, protected by an **access key**.
+- **Why this is better for scanning:** the page runs outside Google's frame, so **live camera barcode scanning works better** from GitHub Pages.
+
+### One-time setup
+
+1. **Update Apps Script.**
+   - In the Sheet, go to **Extensions → Apps Script**.
+   - Paste the new **Code.gs**, and paste **index.html** into the `Index` file.
+   - Click **Save**, then run **setup** once. This creates the access key.
+2. **Get your access key.** Reload the Sheet, then use the menu **Store App → Show access key**. Copy the key.
+   - Treat it like a password.
+   - If it leaks, use **Store App → Create a NEW access key**. Every device will need the new key.
+3. **Deploy the API.**
+   - Go to **Deploy → New deployment → Web app**.
+   - Set **Execute as: Me** and **Who has access: Anyone**.
+   - Click **Deploy** and copy the URL that ends in **/exec**.
+   - *"Anyone" is required so the GitHub page can reach it. Without the access key, the API refuses all requests.*
+4. **Turn on GitHub Pages.**
+   - In the repo, go to **Settings → Pages**.
+   - Under **Source**, choose **Deploy from a branch**.
+   - Choose branch **main**, folder **/ (root)**, then click **Save**.
+   - After a minute or two, the page is live at `https://ebasso2021.github.io/aibuildapp-store/`.
+   - *GitHub Pages on a free account needs the repository to be **public**. The code is public; your data and key are not in it.*
+5. **Connect each device.**
+   - Open the GitHub Pages link.
+   - Paste the **Web app URL (/exec)** and the **access key**, and type your name. Then click **Connect**.
+   - The browser remembers this. You can change it later in **Settings → Change connection**.
+
+### Updating later
+
+- **Screen changes (index.html):** push the new file to GitHub. Every device picks it up on reload.
+- **Changes to Code.gs:** paste the new code into Apps Script, then go to **Deploy → Manage deployments → Edit** and set **New version**.
+
 ## Security (important)
 
 - The app reads and writes the Sheet, so **anyone who can open the app can see all of your store's data**.
@@ -71,11 +110,11 @@ Setup:
   1. Share the Google Sheet with each employee's Google account (Editor).
   2. Deploy with *Execute as: User accessing the web app* and *Anyone with Google account*.
   3. People who don't have access to the Sheet can't read the data.
-- Don't deploy with *Execute as: Me* + *Anyone* — that would expose your data to anyone with the link.
+- *Execute as: Me* + *Anyone* is only safe because every request needs the **access key**. Never publish the key, and don't put backups or exported CSVs in the GitHub repo.
 
 ## Working offline / testing
 
-`Index.html` also works on its own: double-click it to open it in Chrome or Edge. In that mode it runs in **Local mode** and stores data only in that browser. This is useful for testing or training.
+`index.html` also works on its own: double-click it to open it in Chrome or Edge. In that mode it runs in **Local mode** and stores data only in that browser. This is useful for testing or training.
 
 - Use **Settings → Export backup (JSON)** to keep a copy.
 - For the real store, use the Google Sheets deployment.

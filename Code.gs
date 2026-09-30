@@ -5,6 +5,10 @@
  *
  * Setup: Extensions > Apps Script > paste this file as Code.gs and the UI as Index.html
  *        > run setup() once > Deploy > New deployment > Web app.
+ *
+ * The same deployment also works as a JSON API for the GitHub Pages version of the app
+ * (POST to the /exec URL). Every API call must carry the store ACCESS KEY
+ * (created by setup(); see it with the "Store App > Show access key" menu).
  */
 
 const SCHEMA = {
@@ -41,8 +45,64 @@ function onOpen() {
   SpreadsheetApp.getUi()
     .createMenu('Store App')
     .addItem('1) Setup / repair tabs', 'setup')
+    .addItem('2) Show access key', 'showAccessKey')
+    .addItem('3) Create a NEW access key (logs out every device)', 'resetAccessKey')
     .addToUi();
 }
+
+/* ---------- Access key (protects the API) ---------- */
+function getKey_() {
+  const props = PropertiesService.getScriptProperties();
+  let k = props.getProperty('API_KEY');
+  if (!k) { k = Utilities.getUuid().replace(/-/g, ''); props.setProperty('API_KEY', k); }
+  return k;
+}
+function isOwner_() {
+  try {
+    const a = Session.getActiveUser().getEmail(), o = Session.getEffectiveUser().getEmail();
+    return !!a && a === o;
+  } catch (e) { return false; }
+}
+function checkAccess_(key) {
+  if (isOwner_()) return;
+  if (!key || String(key) !== getKey_()) throw new Error('INVALID_KEY');
+}
+function showAccessKey() {
+  const k = getKey_();
+  Logger.log('Access key: ' + k);
+  try { SpreadsheetApp.getUi().alert('Store access key', k, SpreadsheetApp.getUi().ButtonSet.OK); } catch (e) {}
+  return k;
+}
+function resetAccessKey() {
+  PropertiesService.getScriptProperties().deleteProperty('API_KEY');
+  return showAccessKey();
+}
+
+/* ---------- JSON API for the GitHub Pages app ----------
+ * POST body (sent as text/plain to avoid CORS preflight):
+ *   {"key":"...","action":"ping"|"load"|"commit","ops":[...]}
+ * Response: {"ok":true,"data":...} or {"ok":false,"error":"..."}
+ */
+function doPost(e) {
+  let out;
+  try {
+    const req = JSON.parse((e && e.postData && e.postData.contents) || '{}');
+    checkAccess_(req.key);
+    let data;
+    if (req.action === 'ping') data = '{"store":' + JSON.stringify(SpreadsheetApp.getActiveSpreadsheet().getName()) + '}';
+    else if (req.action === 'load') data = apiLoad_();
+    else if (req.action === 'commit') data = apiCommit_(JSON.stringify(req.ops || []));
+    else throw new Error('Unknown action');
+    out = '{"ok":true,"data":' + data + '}';
+  } catch (err) {
+    out = JSON.stringify({ ok: false, error: String((err && err.message) || err) });
+  }
+  return ContentService.createTextOutput(out).setMimeType(ContentService.MimeType.JSON);
+}
+
+/* ---------- Calls from the Apps Script-hosted page (google.script.run) ---------- */
+function apiLoad(key) { checkAccess_(key); return apiLoad_(); }
+function apiCommit(opsJson, key) { checkAccess_(key); return apiCommit_(opsJson); }
 
 /* ---------- One-time setup: creates every tab with its headers ---------- */
 function setup() {
@@ -57,6 +117,7 @@ function setup() {
       .setFontWeight('bold').setBackground('#1e293b').setFontColor('#ffffff');
     sh.setFrozenRows(1);
   });
+  getKey_();
   ['Sheet1', 'Hoja 1', 'Hoja1'].forEach(function (n) {
     const s = ss.getSheetByName(n);
     if (s && s.getLastRow() === 0 && ss.getSheets().length > 1) ss.deleteSheet(s);
@@ -108,7 +169,7 @@ function nextSeq_(table) {
 }
 
 /* ---------- API: load everything ---------- */
-function apiLoad() {
+function apiLoad_() {
   const tz = Session.getScriptTimeZone();
   const out = {};
   Object.keys(SCHEMA).forEach(function (name) {
@@ -130,7 +191,7 @@ function apiLoad() {
  * number === 'AUTO' gets the next sequence number (INV-00001 ...).
  * Any top-level string "@@num:<id>" is replaced by that record's number.
  */
-function apiCommit(opsJson) {
+function apiCommit_(opsJson) {
   const lock = LockService.getScriptLock();
   lock.waitLock(30000);
   try {
