@@ -33,12 +33,26 @@ const SCHEMA = {
 
 const PREFIX = { Sales: 'INV-', Repairs: 'RO-', Warranties: 'WAR-', Purchases: 'PO-' };
 
-/* ---------- Web app entry ---------- */
+/* ---------- Web app entry ----------
+ * The app screens run on GitHub Pages; this script is only the API + database.
+ * Opening the /exec link in a browser shows a short page with a link to the app.
+ * (If you also keep an HTML file named "Index" in this project, it is served instead.)
+ */
+const APP_URL = 'https://ebasso2021.github.io/aibuildapp-store/';
+
 function doGet() {
-  return HtmlService.createHtmlOutputFromFile('Index')
-    .setTitle('AIBuildApp Store')
-    .addMetaTag('viewport', 'width=device-width, initial-scale=1')
-    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.DEFAULT);
+  try {
+    return HtmlService.createHtmlOutputFromFile('Index')
+      .setTitle('AIBuildApp Store')
+      .addMetaTag('viewport', 'width=device-width, initial-scale=1');
+  } catch (e) {
+    return HtmlService.createHtmlOutput(
+      '<div style="font-family:system-ui,Arial;padding:30px;max-width:560px">' +
+      '<h2>AIBuildApp Store API is running</h2>' +
+      '<p>This link is the database connection for the store app. Open the app here:</p>' +
+      '<p><a href="' + APP_URL + '" target="_top" style="font-size:18px">' + APP_URL + '</a></p></div>'
+    ).setTitle('AIBuildApp Store API');
+  }
 }
 
 function onOpen() {
