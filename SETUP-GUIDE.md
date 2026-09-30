@@ -23,21 +23,25 @@ Sales, repair and inventory manager for an electronics store (phones, iPads, tab
 
 1. Open the Google Sheet **AIBuildApp Store – Database** in your Drive folder **AIBuildApp Store**.
 2. In the Sheet, go to **Extensions → Apps Script**.
-3. The editor opens a file called `Code.gs`. Delete everything in it, then paste the full contents of **Code.gs** from the folder.
-4. Click **+ (Add a file) → HTML** and name it exactly `Index`. The editor adds `.html` for you. Delete its default content and paste the full contents of **index.html**.
-5. Click **Save** (disk icon).
-6. In the function dropdown at the top, choose **setup** and click **Run**. Approve the permissions when asked (*Advanced → Go to project → Allow*). This creates all the tabs: Customers, Products, Kardex, Sales, Repairs, Warranties and the rest.
-7. Click **Deploy → New deployment**, then the gear icon → **Web app**:
-   - **Execute as:** *Me* if only you will use it. Choose *User accessing the web app* if staff will use it too (see Security below).
-   - **Who has access:** *Only myself*, or *Anyone with Google account* for staff.
-   - Click **Deploy** and copy the **Web app URL**. That URL is your app, so bookmark it on every computer and tablet you use at the counter.
-8. Open the URL, go to **Settings**, and enter your store name, address, phone, tax rate and technicians.
+3. The editor opens a file called `Code.gs`. Delete everything in it, paste the full contents of **Code.gs**, then click **Save**.
+   - No HTML file is needed in Apps Script. The screens run from GitHub.
+4. In the function dropdown at the top, choose **setup** and click **Run**.
+   - Approve the permissions when asked (*Advanced → Go to project → Allow*).
+   - This creates all the tabs and the first user, **admin**. Its temporary password appears in the **Execution log**.
+5. Click **Deploy → New deployment**, then the gear icon → **Web app**:
+   - **Execute as:** Me
+   - **Who has access:** Anyone
+   - Click **Deploy**.
+6. Open `https://ebasso2021.github.io/aibuildapp-store/` and sign in as **admin**. Then:
+   - Change the password in **My account**.
+   - Enter your store details in **Settings**.
+   - Create your technicians in **Users**.
    - To try the app first, click **Load demo data** in Settings. It only appears while the database is empty.
-   - To remove the demo data later, delete its rows from the Sheet tabs.
 
 ### Updating the app later
 
-If you paste a new version of the code, open **Deploy → Manage deployments → Edit (pencil)**, set **Version** to *New version*, then click **Deploy**. The URL stays the same.
+- **Screens:** push the new `index.html` to GitHub.
+- **Script:** paste the new `Code.gs` into Apps Script, then go to **Deploy → Manage deployments → Edit (pencil) → Version: New version → Deploy**. The URL stays the same.
 
 ## Barcodes
 
@@ -65,52 +69,56 @@ Setup:
 
 ## Run the app from GitHub Pages
 
-You can open the app from GitHub instead of the Google link, for example:
+The app runs at `https://ebasso2021.github.io/aibuildapp-store/`.
 
-`https://ebasso2021.github.io/aibuildapp-store/`
-
-- **Where data is kept:** the page on GitHub is only the screens. Your data still lives in the Google Sheet. The page talks to your Apps Script over the internet, protected by an **access key**.
-- **Why this is better for scanning:** the page runs outside Google's frame, so **live camera barcode scanning works better** from GitHub Pages.
+- **GitHub** holds only the screens (`index.html`).
+- **Google** holds the script (`Code.gs`) and the data (the Google Sheet).
+- **Sign-in:** everyone signs in with a **username and password**.
 
 ### One-time setup
 
 1. **Update Apps Script.**
    - In the Sheet, go to **Extensions → Apps Script**.
-   - Paste the new **Code.gs**, and paste **index.html** into the `Index` file.
-   - Click **Save**, then run **setup** once. This creates the access key.
-2. **Get your access key.** Reload the Sheet, then use the menu **Store App → Show access key**. Copy the key.
-   - Treat it like a password.
-   - If it leaks, use **Store App → Create a NEW access key**. Every device will need the new key.
-3. **Deploy the API.**
-   - Go to **Deploy → New deployment → Web app**.
-   - Set **Execute as: Me** and **Who has access: Anyone**.
-   - Click **Deploy** and copy the URL that ends in **/exec**.
-   - *"Anyone" is required so the GitHub page can reach it. Without the access key, the API refuses all requests.*
-4. **Turn on GitHub Pages.**
-   - In the repo, go to **Settings → Pages**.
-   - Under **Source**, choose **Deploy from a branch**.
-   - Choose branch **main**, folder **/ (root)**, then click **Save**.
-   - After a minute or two, the page is live at `https://ebasso2021.github.io/aibuildapp-store/`.
-   - *GitHub Pages on a free account needs the repository to be **public**. The code is public; your data and key are not in it.*
-5. **Connect each device.**
-   - Open the GitHub Pages link.
-   - Paste the **Web app URL (/exec)** and the **access key**, and type your name. Then click **Connect**.
-   - The browser remembers this. You can change it later in **Settings → Change connection**.
+   - Replace all of `Code.gs` with the new version, then click **Save**.
+2. **Run setup.** Choose **setup** in the function dropdown and click **Run**.
+   - This adds the **Users** tab and creates the first user: **admin**.
+   - Its temporary password appears in the **Execution log** at the bottom. Copy it.
+3. **Deploy.**
+   - Go to **Deploy → Manage deployments → Edit (pencil)**.
+   - Set **Version: New version**, **Execute as: Me**, **Who has access: Anyone**, then click **Deploy**. The link stays the same.
+4. **Turn on GitHub Pages** (only once).
+   - In the repo, go to **Settings → Pages → Deploy from a branch → main → / (root)**.
+   - The repository must be public on a free GitHub account.
+5. **Sign in as admin.**
+   - Open the app and sign in with **admin** and the temporary password.
+   - Right away, go to **My account → Change password**.
 
-### Updating later
+## Users and roles
 
-- **Screen changes (index.html):** push the new file to GitHub. Every device picks it up on reload.
-- **Changes to Code.gs:** paste the new code into Apps Script, then go to **Deploy → Manage deployments → Edit** and set **New version**.
+| | Administrator | Technician |
+|---|---|---|
+| Dashboard | Full business dashboard | Repair dashboard + "My open repairs" |
+| Repairs | Everything, including **Deliver & charge** | Create, edit, diagnose, add parts, change status. **Cannot** deliver/charge or edit a delivered repair |
+| Warranties | Everything | View, search, record claims, open a warranty repair |
+| Customers | Everything, including purchases and total spent | Name, phone and email only. Can add customers and edit contact info. No purchase history or totals |
+| Parts & stock | Full inventory, costs, margins, kardex, labels | Stock, location, price and warranty. **No costs** |
+| POS, Sales, Kardex, Purchases, Suppliers, Expenses, Reports, Settings, Users | Yes | No |
+
+- **Adding a user:** go to **Users → New user**. Choose the role and a password of at least 6 characters.
+- **Switching a user off:** set **Active: No**. That user can't sign in any more, and their name stays on old records.
+- **Resetting a password:** edit the user and type a new one.
+- **Every user's own account:** each person can change their own password in **My account**.
+- **Forgotten admin password:** in the Sheet, use **Store App → Reset "admin" password**. You can also run `resetAdminPassword` in Apps Script. The new password appears in the Execution log.
 
 ## Security (important)
 
-- The app reads and writes the Sheet, so **anyone who can open the app can see all of your store's data**.
-- **Just you:** set *Execute as: Me* and *Only myself*.
-- **Staff:**
-  1. Share the Google Sheet with each employee's Google account (Editor).
-  2. Deploy with *Execute as: User accessing the web app* and *Anyone with Google account*.
-  3. People who don't have access to the Sheet can't read the data.
-- *Execute as: Me* + *Anyone* is only safe because every request needs the **access key**. Never publish the key, and don't put backups or exported CSVs in the GitHub repo.
+- **Rules are enforced in Google, not just hidden on screen.** A technician who tries to read sales or costs, or to charge a repair, is refused by the script, even with browser tricks.
+- **Passwords are never stored.** The Users tab only has a salted hash.
+- **Failed sign-ins:** after 5 failed attempts, that username is locked for 10 minutes.
+- **Session length:** a session lasts 6 hours after the last activity. Use **Sign out** on shared computers.
+- **Who can see the Sheet:** only you (the owner) should have access to the Google Sheet itself. Don't share the Sheet with technicians, because they would see everything there. They only need their app user.
+- **"Anyone" access:** it's needed so the GitHub page can reach the script. Every data request still requires a signed-in user.
+- **Keep data out of GitHub:** never put backups or exported CSVs in the GitHub repo.
 
 ## Working offline / testing
 
