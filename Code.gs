@@ -19,7 +19,7 @@ const SCHEMA = {
   Settings:   ['id', 'value'],
   Users:      ['id', 'username', 'name', 'role', 'active', 'salt', 'hash', 'createdAt', 'lastLogin'],
   Customers:  ['id', 'name', 'phone', 'email', 'address', 'notes', 'createdAt'],
-  Suppliers:  ['id', 'name', 'contact', 'phone', 'email', 'notes', 'createdAt'],
+  Suppliers:  ['id', 'name', 'contact', 'phone', 'email', 'website', 'notes', 'createdAt'],
   Products:   ['id', 'sku', 'barcode', 'name', 'kind', 'category', 'brand', 'model', 'price', 'avgCost', 'stock',
                'minStock', 'warrantyDays', 'location', 'active', 'createdAt'],
   Kardex:     ['id', 'date', 'productId', 'sku', 'type', 'ref', 'qtyIn', 'qtyOut', 'unitCost',
@@ -257,7 +257,7 @@ function commit_(s, ops) {
       if (DATA_TABLES.indexOf(op.table) < 0) throw new Error('Unknown table: ' + op.table);
       if (!idx[op.table]) {
         const sh = sheet_(op.table);
-        idx[op.table] = { sh: sh, headers: headers_(sh), ids: colIds_(sh) };
+        idx[op.table] = { sh: sh, headers: ensureHeaders_(sh, op.table), ids: colIds_(sh) };
       }
       const T = idx[op.table];
       const rec = op.record || {};
@@ -317,6 +317,17 @@ function sheet_(name) {
     sh.setFrozenRows(1);
   }
   return sh;
+}
+/* Adds any column listed in SCHEMA that the tab does not have yet (new fields after updates) */
+function ensureHeaders_(sh, name) {
+  const h = headers_(sh);
+  const missing = (SCHEMA[name] || []).filter(function (c) { return h.indexOf(c) < 0; });
+  if (missing.length) {
+    sh.getRange(1, h.length + 1, 1, missing.length).setValues([missing])
+      .setFontWeight('bold').setBackground('#1e293b').setFontColor('#ffffff');
+    return h.concat(missing);
+  }
+  return h;
 }
 function headers_(sh) { return sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0]; }
 function colIds_(sh) {
