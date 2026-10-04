@@ -18,7 +18,7 @@
 const SCHEMA = {
   Settings:   ['id', 'value'],
   Users:      ['id', 'username', 'name', 'role', 'active', 'salt', 'hash', 'createdAt', 'lastLogin'],
-  Customers:  ['id', 'name', 'phone', 'email', 'address', 'notes', 'createdAt'],
+  Customers:  ['id', 'name', 'phone', 'email', 'address', 'notes', 'createdAt', 'source', 'marketingOptIn', 'campaignId'],
   Suppliers:  ['id', 'name', 'contact', 'phone', 'email', 'website', 'notes', 'createdAt'],
   Products:   ['id', 'sku', 'barcode', 'name', 'kind', 'category', 'brand', 'model', 'price', 'avgCost', 'stock',
                'minStock', 'warrantyDays', 'location', 'active', 'createdAt'],
@@ -26,22 +26,31 @@ const SCHEMA = {
                'balanceQty', 'balanceAvgCost', 'balanceValue', 'notes', 'user'],
   Purchases:  ['id', 'number', 'date', 'supplierId', 'invoiceRef', 'items', 'total', 'notes', 'user'],
   Sales:      ['id', 'number', 'date', 'customerId', 'items', 'subtotal', 'discount', 'tax', 'total',
-               'cost', 'profit', 'payment', 'status', 'repairId', 'notes', 'user'],
+               'cost', 'profit', 'payment', 'status', 'repairId', 'notes', 'user',
+               'source', 'campaignId', 'promoCode', 'promoDiscount'],
   Repairs:    ['id', 'number', 'dateIn', 'customerId', 'deviceType', 'brand', 'model', 'serial',
                'accessories', 'condition', 'problem', 'diagnosis', 'technician', 'status', 'priority',
                'promisedDate', 'estimate', 'labor', 'parts', 'deposit', 'total', 'warrantyDays',
-               'warrantyId', 'dateOut', 'saleId', 'history', 'notes'],
+               'warrantyId', 'dateOut', 'saleId', 'history', 'notes', 'source', 'campaignId'],
   Warranties: ['id', 'number', 'type', 'refId', 'refNumber', 'customerId', 'description', 'serial',
                'startDate', 'endDate', 'status', 'claims', 'notes'],
-  Expenses:   ['id', 'date', 'category', 'description', 'amount', 'payment', 'supplierId', 'notes', 'user']
+  Expenses:   ['id', 'date', 'category', 'description', 'amount', 'payment', 'supplierId', 'notes', 'user',
+               'costType', 'campaignId'],
+  /* Marketing & planning */
+  Campaigns:  ['id', 'name', 'channel', 'status', 'startDate', 'endDate', 'budget', 'goal', 'promoCode', 'notes', 'createdAt'],
+  Promos:     ['id', 'code', 'description', 'type', 'value', 'minPurchase', 'startDate', 'endDate', 'maxUses', 'uses',
+               'active', 'campaignId', 'createdAt'],
+  Goals:      ['id', 'month', 'target', 'notes'],
+  MailLog:    ['id', 'date', 'campaignId', 'segment', 'subject', 'sent', 'skipped', 'user']
 };
-const DATA_TABLES = ['Settings', 'Customers', 'Suppliers', 'Products', 'Kardex', 'Purchases', 'Sales', 'Repairs', 'Warranties', 'Expenses'];
+const DATA_TABLES = ['Settings', 'Customers', 'Suppliers', 'Products', 'Kardex', 'Purchases', 'Sales', 'Repairs', 'Warranties', 'Expenses',
+                     'Campaigns', 'Promos', 'Goals', 'MailLog'];
 const PREFIX = { Sales: 'INV-', Repairs: 'RO-', Warranties: 'WAR-', Purchases: 'PO-' };
 
 /* What a Technician may READ (true = all columns, array = only those columns) */
 const TECH_READ = {
   Settings: true,
-  Customers: ['id', 'name', 'phone', 'email', 'createdAt'],
+  Customers: ['id', 'name', 'phone', 'email', 'createdAt', 'source', 'marketingOptIn'],
   Products: ['id', 'sku', 'barcode', 'name', 'kind', 'category', 'brand', 'model', 'price', 'stock',
              'minStock', 'warrantyDays', 'location', 'active'],
   Repairs: true,
@@ -54,7 +63,8 @@ const SESSION_SECONDS = 6 * 60 * 60;   // sign-in lasts 6 hours of inactivity
 const APP_URL = 'https://ebasso2021.github.io/aibuildapp-store/';
 
 /* ======================= Web entry points ======================= */
-function doGet() {
+function doGet(e) {
+  if (e && e.parameter && e.parameter.u) return unsubscribe_(e.parameter.u, e.parameter.k);
   return HtmlService.createHtmlOutput(
     '<div style="font-family:system-ui,Arial;padding:30px;max-width:560px">' +
     '<h2>AIBuildApp Store API is running</h2>' +
@@ -93,6 +103,8 @@ function handle_(req) {
     case 'users.list':   admin_(s); return listUsers_();
     case 'users.save':   admin_(s); return saveUser_(s, req.user || {});
     case 'users.delete': admin_(s); return deleteUser_(s, req.id);
+    case 'mail.quota':   admin_(s); return { remaining: MailApp.getRemainingDailyQuota() };
+    case 'mail.send':    admin_(s); return sendMail_(s, req);
   }
   throw new Error('Unknown action');
 }
@@ -303,6 +315,84 @@ function commit_(s, ops) {
   } finally {
     lock.releaseLock();
   }
+}
+
+/* ======================= Marketing email (admin only) =======================
+ * Sends one personal email per customer through the Gmail account that owns the script.
+ * Only customers with a valid email AND marketingOptIn = "Yes" receive it (Canada's anti-spam law, CASL).
+ * Every email names the store and includes a one-click unsubscribe link.
+ * Google daily limit: about 100 recipients/day on a free Gmail account, 1,500 on Google Workspace.
+ */
+function sendMail_(s, req) {
+  const subject = String(req.subject || '').trim();
+  const body = String(req.body || '').trim();
+  if (!subject || !body) throw new Error('Subject and message are required');
+  if (subject.length > 200) throw new Error('Subject is too long');
+  const ids = (req.customerIds || []).map(String);
+  const set = {};
+  readTable_('Settings').forEach(function (r) { set[r.id] = r.value; });
+  const store = String(set.storeName || 'Our store');
+  const custs = readTable_('Customers').filter(function (c) { return ids.indexOf(String(c.id)) >= 0; });
+  const ok = custs.filter(function (c) {
+    return c.marketingOptIn === 'Yes' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(c.email || '').trim());
+  });
+  let quota = MailApp.getRemainingDailyQuota();
+  let sent = 0;
+  const failed = [];
+  const base = unsubBase_(req.apiUrl);
+  ok.forEach(function (c) {
+    if (quota <= 0) return;
+    const fill = function (x) { return x.replace(/\{name\}/g, String(c.name || '').split(' ')[0] || '').replace(/\{store\}/g, store); };
+    const link = base ? base + '?u=' + encodeURIComponent(c.id) + '&k=' + unsubSig_(c.id) : '';
+    const foot = '\n\n--\n' + store + (set.address ? '\n' + set.address : '') + (set.phone ? '\n' + set.phone : '') +
+      (set.email ? '\n' + set.email : '') + '\nYou receive this email because you agreed to receive news and offers from ' + store + '.' +
+      (link ? '\nUnsubscribe: ' + link : '\nTo unsubscribe, reply with the word UNSUBSCRIBE.');
+    const text = fill(body) + foot;
+    const html = '<div style="font-family:Arial,sans-serif;font-size:14px;line-height:1.5">' + escHtml_(fill(body)).replace(/\n/g, '<br>') +
+      '<hr style="border:0;border-top:1px solid #ddd;margin:20px 0"><div style="color:#666;font-size:12px">' +
+      escHtml_(store) + (set.address ? '<br>' + escHtml_(set.address) : '') + (set.phone ? '<br>' + escHtml_(set.phone) : '') +
+      (set.email ? '<br>' + escHtml_(set.email) : '') + '<br>You receive this email because you agreed to receive news and offers from ' +
+      escHtml_(store) + '.<br>' + (link ? '<a href="' + link + '">Unsubscribe</a>' : 'To unsubscribe, reply with the word UNSUBSCRIBE.') + '</div></div>';
+    try {
+      const opt = { to: String(c.email).trim(), subject: fill(subject), body: text, htmlBody: html, name: store };
+      if (set.email) opt.replyTo = String(set.email);
+      MailApp.sendEmail(opt);
+      sent++; quota--;
+    } catch (err) { failed.push(c.name); }
+  });
+  const skipped = ids.length - sent;
+  writeRows_('MailLog', [{ id: Utilities.getUuid(), date: now_(), campaignId: req.campaignId || '', segment: String(req.segment || ''),
+    subject: subject, sent: sent, skipped: skipped, user: s.name }]);
+  return { sent: sent, skipped: skipped, notOptedIn: custs.length - ok.length, failed: failed, remaining: MailApp.getRemainingDailyQuota() };
+}
+function escHtml_(x) { return String(x).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+function unsubBase_(clientUrl) {
+  let u = '';
+  try { u = ScriptApp.getService().getUrl() || ''; } catch (e) {}
+  if (!/\/exec$/.test(u) && /^https:\/\/script\.google\.com\/.+\/exec$/.test(String(clientUrl || ''))) u = String(clientUrl);
+  return /\/exec$/.test(u) ? u : '';
+}
+function unsubSig_(id) {
+  const props = PropertiesService.getScriptProperties();
+  let key = props.getProperty('UNSUB_SECRET');
+  if (!key) { key = Utilities.getUuid() + Utilities.getUuid(); props.setProperty('UNSUB_SECRET', key); }
+  return Utilities.computeHmacSha256Signature(String(id), key)
+    .map(function (b) { return ('0' + (b & 255).toString(16)).slice(-2); }).join('').slice(0, 32);
+}
+function unsubscribe_(id, sig) {
+  let msg = 'This link is not valid.';
+  if (id && sig && unsubSig_(id) === String(sig)) {
+    const lock = LockService.getScriptLock();
+    lock.waitLock(20000);
+    try {
+      ensureHeaders_(sheet_('Customers'), 'Customers');
+      const c2 = readTable_('Customers').filter(function (x) { return String(x.id) === String(id); })[0];
+      if (c2) { c2.marketingOptIn = 'No'; writeRows_('Customers', [c2]); }
+      msg = 'You have been unsubscribed. You will not receive promotional emails from us anymore.';
+    } finally { lock.releaseLock(); }
+  }
+  return HtmlService.createHtmlOutput('<div style="font-family:system-ui,Arial;padding:30px;max-width:560px"><h2>' + msg + '</h2></div>')
+    .setTitle('Unsubscribe');
 }
 
 /* ======================= Sheet helpers ======================= */

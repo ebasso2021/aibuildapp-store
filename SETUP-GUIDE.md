@@ -17,6 +17,9 @@ Sales, repair and inventory manager for an electronics store (phones, iPads, tab
 | **Purchases / Suppliers** | Receiving stock updates quantities and average cost automatically |
 | **Expenses** | Operating costs by category: rent, payroll, utilities and more |
 | **Reports** | Income statement (net sales, COGS, gross profit, expenses, net profit), tax collected, sales by payment method, top products and customers, repair turnaround, technician performance, CSV exports |
+| **Sales projection** | Forecast of monthly net sales for the next 3, 6 or 12 months (trend of past months; with 24+ months it also uses seasonality), with an 80 % range and a what-if % adjustment. Monthly sales goals: progress this month, projected result, sales needed per day, and estimated gross and net profit per month. **Auto-fill goals** sets goals = projection + growth % |
+| **Cost analysis** | Gross and net margin, fixed vs variable costs, **break-even** sales per month and safety margin. Margins and markup by category and product, products sold below cost or under the low-margin alert, repair margins by device type, catalog price check with suggested prices, 6-month expense trend (% of sales), inventory carrying cost, dead stock, and a **price calculator** (cost + labor + target margin → price with GST) |
+| **Marketing** | **Campaigns** (channel, dates, budget, spend, sales, new customers, ROI). **Promo codes** (% or $ off, dates, minimum purchase, usage limit) applied at the Point of Sale and on repair checkout. **Lead source** ("How did you hear about us?") saved on customers, repairs and sales. **Customer segments** (opted-in, new, inactive 90+ days, top spenders, warranty expiring, repairs ready, by source) with CSV export, SMS/call/email links. **Email** to a segment from the store's Gmail, only to customers who accepted promotions, with an automatic unsubscribe link |
 | **Settings** | Store info, tax rate and label (default 5 % GST for Alberta), technicians, warranty and repair terms, English/Spanish toggle |
 
 ## Install (about 10 minutes)
@@ -37,6 +40,18 @@ Sales, repair and inventory manager for an electronics store (phones, iPads, tab
    - Enter your store details in **Settings**.
    - Create your technicians in **Users**.
    - To try the app first, click **Load demo data** in Settings. It only appears while the database is empty.
+
+### Upgrading to the planning & marketing version
+
+1. Paste the new `Code.gs` into Apps Script and **Save**.
+2. Run **setup** once. It adds the new tabs (**Campaigns, Promos, Goals, MailLog**) and the new columns. Your data is kept.
+3. Google asks you to approve a new permission: **Send email as you** (used only by Marketing → Email). Approve it.
+4. **Deploy → Manage deployments → Edit → Version: New version → Deploy**. The URL stays the same.
+5. Push the new `index.html` to GitHub.
+6. In **Settings**, review the new values: low margin alert %, target margin %, labor rate per hour, inventory carrying cost % and dead-stock days.
+7. In **Expenses**, each expense now has a **Cost type** (Fixed / Variable). Rent, utilities, payroll, software and insurance are Fixed by default; everything else is Variable. Adjust old expenses if needed. The break-even point depends on this.
+
+**About marketing emails (Canada, CASL):** only customers marked **Accepts promotional emails = Yes** receive campaign emails. Ask for consent and mark it on the customer. Every email includes the store name, address and an unsubscribe link; clicking it sets the customer to **No** automatically. Google's daily limit is about 100 recipients on a free Gmail account and 1,500 on Google Workspace. This is general information, not legal advice.
 
 ### Updating the app later
 
